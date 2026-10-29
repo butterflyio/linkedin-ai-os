@@ -1,0 +1,27 @@
+infographic sequence-circular-simple
+data
+  title AI Incidents
+  desc 8 in 2012, 463 in 2025. Up 48% year over year.
+  sequences
+    - label 2012
+      value 8
+      desc Reported incidents
+      icon shield check
+    - label 2022
+      value 109
+      desc 14x in ten years
+      icon chart line
+    - label 2023
+      value 179
+      desc Steady climb
+      icon trending up
+    - label 2024
+      value 312
+      desc Nearly doubled
+      icon warning
+    - label 2025
+      value 463
+      desc Record high, up 48%
+      icon alert
+theme
+  palette #3b82f6 #06b6d4 #10b981 #f59e0b #ef4444
