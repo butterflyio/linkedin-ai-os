@@ -10,6 +10,7 @@ Generate exactly 6 first-line hooks for a LinkedIn post on the given topic.
 ## Inputs to read first
 
 - ../../brands/you/voice.md (style rules)
+- ../../brands/you/topics.md (topics + point of view to bias toward)
 - ../../brands/you/story-bank.md (real stories to anchor hooks to)
 
 ## Hook formulas that work for this voice

@@ -23,6 +23,11 @@ BANNED_WORDS = {
     "nestled", "vibrant", "fostering", "foster", "underscores", "underscore",
     "symbolizing", "tapestry", "evolving landscape", "cultivate", "garner",
     "renowned", "breathtaking", "must-visit", "vital role",
+    # Hard-bans from the 29 Oct 2026 voice interview (Zain: all content, always)
+    "ai-gaming", "ai gaming", "gaming the system", "game the system",
+    "gamble", "gambling", "bet it all", "betting", "speculate", "scam",
+    "get-rich", "get rich", "no human oversight", "without human oversight",
+    "set it and forget it", "fully automated marketing",
 }
 
 # Words I hedge with; contests directness.

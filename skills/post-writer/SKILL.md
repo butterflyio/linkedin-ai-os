@@ -13,7 +13,10 @@ Every draft MUST start by reading these files in order:
 1. ../../brands/you/voice.md (style rules - non-negotiable)
 2. ../../brands/you/about-me.md (who I am, what I believe)
 3. ../../brands/you/audience.md (who I write for)
-4. ../../brands/you/story-bank.md (real stories to pull from)
+4. ../../brands/you/topics.md (the 3-5 topics to be known for + point of view)
+5. ../../brands/you/story-bank.md (real stories to pull from)
+
+Bias the angle toward the topics in topics.md unless the brief says otherwise.
 
 ## How to draft
 
