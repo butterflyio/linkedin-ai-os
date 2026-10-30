@@ -73,7 +73,7 @@ only channel" - ties the swarm/agent news to Promptraise's business.
 |---|---|---|
 | Reddit | WORKING | Arctic Shift archive (zero-key) + `site:reddit.com` via Serper/SerpAPI. Optional later: official Reddit app for comments/popular. No other tool needed. |
 | X / Twitter | GAP | Needs a real token. Preferred: X API v2 (search-enabled basic tier). Fallback: ScrapeGraph page-scrape of profiles/trending (best-effort, low volume). High-volume: Apify X scrapers (paid) - not needed yet. |
-| LinkedIn | GAP | Do-now: `site:linkedin.com` via Serper/SerpAPI (headline signal). Deepen: ScrapeGraph/Firecrawl page-fetch of public posts found in step 1 (policy-aware, low volume). Later: official LinkedIn Marketing/Company API for own-post analytics. Apify LinkedIn scrapers exist as the heavy hammer - only if we need bulk. |
+| LinkedIn | GAP (verified) | Tested exhaustively (Serper + SerpAPI with `site:linkedin.com/posts` and `/feed`, past-week + past-month): Google returns **0 indexed LinkedIn post URLs** for these terms, and none of the 9 providers surfaced a LinkedIn post this week. LinkedIn posts are login-walled + fingerprint-protected and largely absent from the public index. **Working route:** `brief.py --linkedin-url <public-post-url>` reads specific public posts via Jina reader (primary) / ScrapeGraph (fallback) when you feed it a URL (yours, competitors', or from newsletters). Official LinkedIn Marketing/Company API later for your own-post analytics. Apify/LinkedIn scrapers exist but face the same login wall. |
 
 **Next tool if needed:** Apify is the only remaining candidate (bulk X + LinkedIn harvesting); neither is required for the
 do-now synthesis you asked for.
