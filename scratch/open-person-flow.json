@@ -1,0 +1,103 @@
+{
+  "mode": "flow",
+  "size": [1080, 1350],
+  "fps": 15,
+  "duration": 12.0,
+  "ink": "#17181c",
+  "inkSoft": "#3f444e",
+  "kicker": "One founder. One stack.",
+  "kickerAccent": "#f05a22",
+  "byline": "Zain Khan · building in public",
+  "title": ["The open person", "company."],
+  "stepStart": 0.7,
+  "stepStep": 0.3,
+  "sweepStart": 4.8,
+  "payoffAt": 7.0,
+  "footerTimes": [7.7, 8.0],
+  "footerLeft": "post → gate → gif → buffer",
+  "footerRight": "one person. one stack.",
+  "steps": [
+    {
+      "num": "01",
+      "badge": "SETUP",
+      "icon": "✎",
+      "title": "Write the hook",
+      "sub": "One founder. One stack. Story bank first.",
+      "accent": "#0667d2",
+      "tint": "#ebf4fe",
+      "chips": [
+        { "text": "voice.md", "dot": "#0667d2" },
+        { "text": "story bank", "dot": "#7b5bd6" },
+        { "text": "no em dashes", "dashed": true }
+      ]
+    },
+    {
+      "num": "02",
+      "badge": "DRAFT",
+      "icon": "⚡",
+      "title": "The agent drafts in voice",
+      "sub": "Hook under 55 characters. Real facts only.",
+      "accent": "#6a3fd1",
+      "tint": "#f0edfc",
+      "chips": [
+        { "text": "hook < 55 chars", "tick": true },
+        { "text": "678 contributions", "tick": true }
+      ]
+    },
+    {
+      "num": "03",
+      "badge": "GATE",
+      "icon": "✓",
+      "title": "Caption gate, all checks",
+      "sub": "Banned words, hedges, dashes, spacing.",
+      "accent": "#f05a22",
+      "tint": "#fdebe3",
+      "chips": [
+        { "text": "hook ✓", "tick": true },
+        { "text": "dash ✓", "tick": true },
+        { "text": "banned ✓", "tick": true },
+        { "text": "all passed", "pill": true }
+      ]
+    },
+    {
+      "num": "04",
+      "badge": "RENDER",
+      "icon": "▣",
+      "title": "Infographic renders inline",
+      "sub": "Same frame the whole loop. Nothing jumps.",
+      "accent": "#0f8fa8",
+      "tint": "#e2f3f7",
+      "chips": [
+        { "text": "1080 × 1350", "dot": "#0f8fa8" },
+        { "text": "12 s loop", "dot": "#0f8fa8" },
+        { "text": "no scene changes", "dashed": true }
+      ]
+    },
+    {
+      "num": "05",
+      "badge": "REVIEW",
+      "icon": "☑",
+      "title": "Buffer draft, my approval",
+      "sub": "Nothing posts until I read every line.",
+      "accent": "#b56b00",
+      "tint": "#fbf2df",
+      "chips": [
+        { "text": "pending review", "dot": "#b56b00" },
+        { "text": "my approval", "dot": "#b56b00" }
+      ]
+    },
+    {
+      "num": "06",
+      "badge": "PUBLISH",
+      "icon": "⟳",
+      "title": "Schedule from the queue",
+      "sub": "The stack ships it. I own it.",
+      "accent": "#0e7a45",
+      "tint": "#e7f6ec",
+      "chips": [
+        { "text": "next-gen auto-post", "toggle": false },
+        { "text": "legacy manual", "toggle": true }
+      ]
+    }
+  ]
+}

@@ -107,6 +107,102 @@ function tick() {
 }
 requestAnimationFrame(tick);
 </script>`;
+} else if (S.mode === "flow") {
+  // ── flow mode: engineered spec-diagram, highlight sweep + payoff ────────
+  // (reference style: grid-paper base, numbered step cards with tint+border,
+  // icon tiles, micro-labels, chip rows, connector rail; ONE deliberate sweep
+  // of a highlight down the flow and a single state-flip payoff at the end)
+  const ST = S.steps ?? [];
+  const stepStart = S.stepStart ?? 0.7;
+  const stepStep = S.stepStep ?? 0.3;
+  const CARD_TOP = 296, CARD_H = 150, CARD_GAP = 18, CARD_LEFT = 96, CARD_W = 884;
+  const RLINE_X = 46, RLINE_TOP = CARD_TOP + CARD_H / 2, RLINE_BOTTOM = CARD_TOP + (ST.length - 1) * (CARD_H + CARD_GAP) + CARD_H / 2;
+  const sweepStart = S.sweepStart ?? 2.2, payoffAt = S.payoffAt ?? 7.0;
+
+  css = `
+.flow { background-color: #f2f3f5; background-image:
+  linear-gradient(rgba(213,217,226,.6) 1px, transparent 1px),
+  linear-gradient(90deg, rgba(213,217,226,.6) 1px, transparent 1px);
+  background-size: 34px 34px; }
+@keyframes fkick { 0% { opacity: 0; transform: translateY(-16px); } 100% { opacity: 1; transform: none; } }
+.kicker { animation: fkick .45s ease-out both; animation-delay: .35s; }
+@keyframes ft { 0% { opacity: 0; transform: translateY(-20px); } 100% { opacity: 1; transform: none; } }
+.title { animation: ft .5s cubic-bezier(.2,.7,.3,1.15) both; animation-delay: .55s; }
+@keyframes sweepUp { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(-26px); } }
+.body { animation: sweepUp .8s ease-in both; animation-delay: ${S.duration - 1.1}s; }
+@keyframes fup { 0% { opacity: 0; transform: translateY(20px); } 100% { opacity: 1; transform: none; } }
+.fl { animation: fup .5s ease-out both; animation-delay: ${S.footerTimes?.[0] ?? 7.8}s; }
+.fr { animation: fup .5s ease-out both; animation-delay: ${S.footerTimes?.[1] ?? 8.1}s; }
+@keyframes railin { from { opacity: 0; } to { opacity: 1; } }
+.rail { animation: railin .6s ease-out both; animation-delay: ${stepStart + 0.3}s; }`;
+
+  ST.forEach((st, i) => {
+    const t = stepStart + i * stepStep;
+    const y = CARD_TOP + i * (CARD_H + CARD_GAP);
+    const cy = y + CARD_H / 2;
+    const sweepA = (sweepStart + i * 0.36).toFixed(2);
+    const sweepB = (sweepStart + 3.0 + i * 0.36).toFixed(2); // second pass covers late loop
+    css += `
+@keyframes stin${i} { 0% { opacity: 0; transform: translateY(16px); } 100% { opacity: 1; transform: none; } }
+@keyframes hl${i} { 0% { box-shadow: 0 0 0 2px transparent; } 35% { box-shadow: 0 0 0 4px ${st.accent}; } 100% { box-shadow: 0 0 0 2px transparent; } }
+@keyframes chipin${i} { 0% { opacity: 0; transform: translateY(8px); } 100% { opacity: 1; transform: none; } }
+.step${i} { left: ${CARD_LEFT}px; top: ${y}px; background: ${st.tint}; border: 1.5px solid ${st.accent}59;
+  animation: stin${i} .42s cubic-bezier(.2,.7,.3,1.2) both, hl${i} .55s ease-in-out ${sweepA}s 1 both, hl${i} .55s ease-in-out ${sweepB}s 1 none; }
+.step${i} .chips { animation: chipin${i} .35s ease-out both; animation-delay: ${(t + 0.22).toFixed(2)}s; }
+.step${i} .dot { top: ${cy - 18}px; }`;
+    st.chips?.forEach((ch, ci) => {
+      if (ch.toggle !== undefined) {
+        const on = ch.toggle; // on = currently ON (knob right)
+        css += `
+@keyframes tg${i}_${ci} { from { background: ${on ? st.accent : "#c9cedb"}; } to { background: ${on ? "#c9cedb" : st.accent}; } }
+@keyframes kn${i}_${ci} { from { transform: ${on ? "translateX(20px)" : "none"}; } to { transform: ${on ? "none" : "translateX(20px)"}; } }
+.step${i} .tg${ci} { animation: tg${i}_${ci} .35s ease-out ${payoffAt}s both; }
+.step${i} .kn${ci} { animation: kn${i}_${ci} .35s ease-out ${payoffAt}s both; }`;
+      }
+    });
+  });
+
+  const stepsHtml = ST.map((st, i) => {
+    const chips = (st.chips ?? [])
+      .map((ch, ci) => {
+        if (ch.toggle !== undefined) {
+          const on = ch.toggle;
+          const knobStyle = on ? "transform:translateX(20px)" : "";
+          return `<span class="ctog"><span class="track tg${ci}"><span class="ckn kn${ci}" style="${knobStyle}"></span></span><span class="ctxt">${ch.text}</span></span>`;
+        }
+        return `<span class="chip${ch.dashed ? " cdas" : ""}${ch.pill ? " cpill" : ""}">${ch.tick ? `<span class="cok">✓</span>` : ch.dot ? `<span class="cdot" style="background:${ch.dot}"></span>` : ""}${ch.text}</span>`;
+      })
+      .join("");
+    return `<div class="stepcard step${i}">
+  <div class="tile" style="color:${st.accent};border:1.5px solid ${st.accent}22">${st.icon}</div>
+  <div class="scol">
+    <div class="badge" style="color:${st.accent}">${st.badge}</div>
+    <div class="stitle">${st.title}</div>
+    <div class="ssub">${st.sub}</div>
+    <div class="chips">${chips}</div>
+  </div>
+</div>`;
+  }).join("\n");
+
+  const railDots = ST.map((st, i) => {
+    const cy = CARD_TOP + i * (CARD_H + CARD_GAP) + CARD_H / 2;
+    return `<div class="dot rdot" style="top:${cy - 18}px">${String(i + 1).padStart(2, "0")}</div>`;
+  }).join("\n");
+
+  sceneHtml = `
+<div class="flow">
+<div class="body">
+  <div class="fh">
+    <div class="kicker">${S.kicker}</div>
+    <div class="title"><span>${S.title[0]}</span><span>${S.title[1] ?? ""}</span></div>
+    <div class="fbyline"><span class="fav">Z</span>${S.byline ?? ""}</div>
+  </div>
+  ${stepsHtml}
+  <div class="rail"><div class="rline" style="top:${RLINE_TOP}px;height:${RLINE_BOTTOM - RLINE_TOP}px;left:${RLINE_X}px"></div>${railDots}</div>
+</div>
+<div class="footbar"><div class="fl">${S.footerLeft ?? ""}</div><div class="fr">${S.footerRight ?? ""}</div></div>
+<div class="doodle d2" style="left:-110px;bottom:-90px"></div>
+</div>`;
 } else if (S.mode === "canvas") {
   // ── canvas mode: rich single frame, many elements animating at once ─────
   // (reference style: soft pastel gradient stays static; chips, pills, hero
@@ -325,12 +421,43 @@ html, body { margin: 0; padding: 0; background: #fff; overflow: hidden; }
 .board .title { display: flex; flex-direction: column; font-size: 76px; font-weight: 900; color: ${S.ink}; line-height: 1.08; letter-spacing: -0.02em; margin-top: 22px; }
 .board .foot { display: flex; flex-direction: column; margin-top: 52px; font-size: 44px; font-weight: 800; color: ${S.ink}; }
 .board .f2 { font-size: 37px; font-weight: 600; color: ${S.inkSoft}; margin-top: 10px; }
+.flow { position: absolute; inset: 0; }
+.flow .body { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: flex-start; }
+.fh { margin: 44px 0 0 96px; text-align: left; }
+.flow .kicker { font-size: 27px; font-weight: 700; letter-spacing: .26em; text-transform: uppercase; color: ${S.kickerAccent ?? "#f05a22"}; }
+.flow .title { display: flex; flex-direction: column; font-size: 68px; font-weight: 900; color: ${S.ink}; line-height: 1.05; letter-spacing: -0.03em; margin-top: 10px; }
+.fbyline { display: flex; align-items: center; gap: 12px; margin-top: 14px; font-size: 22px; font-weight: 600; color: ${S.inkSoft}; }
+.fav { width: 34px; height: 34px; border-radius: 50%; background: ${S.kickerAccent ?? "#f05a22"}; color: #fff; font-weight: 800; font-size: 17px; display: flex; align-items: center; justify-content: center; }
+.stepcard { position: absolute; width: 884px; height: 150px; border-radius: 18px; box-sizing: border-box; display: flex; align-items: center; gap: 20px; padding: 14px 20px; }
+.tile { width: 76px; height: 76px; border-radius: 16px; background: #fff; display: flex; align-items: center; justify-content: center; font-size: 34px; flex: none; box-shadow: 0 4px 14px rgba(24, 30, 60, .07); }
+.scol { min-width: 0; flex: 1; }
+.badge { font-size: 13.5px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+.stitle { font-size: 30px; font-weight: 800; color: ${S.ink}; margin-top: 2px; letter-spacing: -0.01em; }
+.ssub { font-size: 19px; font-weight: 500; color: ${S.inkSoft}; margin-top: 1px; }
+.scol { position: relative; }
+.badge { display: inline-block; position: absolute; right: 2px; top: 0; background: #fff; border: 1px solid; border-radius: 999px; padding: 3px 12px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 7px; align-items: center; }
+.chip { display: inline-flex; align-items: center; gap: 7px; background: #fff; border: 1px solid #e3e6ec; border-radius: 999px; padding: 4px 12px; font-size: 17px; font-weight: 600; color: ${S.ink}; white-space: nowrap; }
+.chip.cdas { border: 1.5px dashed #b9bdc7; background: transparent; color: ${S.inkSoft}; }
+.chip.cpill { background: #e7f5ec; border-color: #bfe6cf; color: #0e7a45; font-weight: 700; }
+.cok { color: #0e7a45; font-weight: 900; font-size: 15px; }
+.cdot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+.ctog { display: inline-flex; align-items: center; gap: 10px; white-space: nowrap; }
+.track { display: block; width: 46px; height: 26px; border-radius: 999px; background: #c9cedb; border: 1px solid #b3b9c8; position: relative; flex: none; box-sizing: border-box; }
+.ckn { position: absolute; left: 3px; top: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 5px rgba(20, 26, 40, .32); }
+.ctxt { font-size: 17px; font-weight: 700; color: ${S.ink}; }
+.rail { position: absolute; inset: 0; pointer-events: none; }
+.rline { position: absolute; width: 2px; background: #d6d9e1; }
+.rdot { position: absolute; left: 28px; width: 36px; height: 36px; border-radius: 50%; background: #fff; border: 1.5px solid #d6d9e1; color: #5f636e; font-size: 14px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+.footbar { position: absolute; left: 0; right: 0; bottom: 24px; display: flex; justify-content: space-between; padding: 0 96px; font-size: 19px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: ${S.inkSoft}; }
+.doodle { position: absolute; width: 460px; height: 460px; border-radius: 50%; background: radial-gradient(circle, rgba(192, 198, 216, .38) 0%, transparent 62%); pointer-events: none; }
+.doodle.d2 { background: radial-gradient(circle, rgba(212, 198, 236, .38) 0%, transparent 62%); }
 .canvas { position: absolute; inset: 0; }
 .canvas .body { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; }
 .kicker { font-size: 30px; font-weight: 700; letter-spacing: .22em; text-transform: uppercase; color: ${S.kickerAccent ?? "#ff6b35"}; }
 .title { display: flex; flex-direction: column; font-size: 74px; font-weight: 900; color: ${S.ink}; line-height: 1.08; letter-spacing: -0.02em; }
-.pos { position: absolute; transform: translate(-50%, -50%); }
-.chip { position: absolute; width: 292px; }
+.canvas .pos { position: absolute; transform: translate(-50%, -50%); }
+.canvas .chip { position: absolute; width: 292px; }
 .chip.hero { width: 348px; z-index: 2; }
 .chip .card { position: relative; background: #ffffff; border-radius: 28px; box-shadow: 0 18px 44px rgba(24, 28, 60, .10); padding: 20px 26px 22px; text-align: center; box-sizing: border-box; }
 .chip .num { font-size: 82px; font-weight: 900; line-height: 1; letter-spacing: -0.02em; }
@@ -338,10 +465,10 @@ html, body { margin: 0; padding: 0; background: #fff; overflow: hidden; }
 .chip .num.tag { font-size: 64px; line-height: 1.12; }
 .chip .lbl { font-size: 20px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: ${S.ink}; margin-top: 12px; }
 .chip .dsc { font-size: 23px; font-weight: 600; color: ${S.inkSoft}; margin-top: 8px; line-height: 1.22; }
-.pill { position: absolute; background: #ffffff; border-radius: 999px; white-space: nowrap; width: max-content; box-shadow: 0 12px 30px rgba(24, 28, 60, .08); padding: 15px 30px; font-size: 29px; font-weight: 700; color: ${S.ink}; }
+.canvas .pill { position: absolute; background: #ffffff; border-radius: 999px; white-space: nowrap; width: max-content; box-shadow: 0 12px 30px rgba(24, 28, 60, .08); padding: 15px 30px; font-size: 29px; font-weight: 700; color: ${S.ink}; }
 .eqwrap { position: absolute; left: 50%; bottom: 150px; transform: translateX(-50%); display: flex; align-items: center; gap: 9px; height: 36px; }
 .eq { width: 10px; height: 36px; border-radius: 5px; transform-origin: bottom; }
-.dot { position: absolute; border-radius: 50%; }
+.canvas .dot { position: absolute; border-radius: 50%; }
 .canvas .foot { margin: 0; position: absolute; left: 50%; bottom: 62px; transform: translateX(-50%); text-align: center; width: 100%; }
 .canvas .f1 { font-size: 34px; font-weight: 700; letter-spacing: .08em; color: ${S.inkSoft}; }
 .canvas .f2 { font-size: 42px; font-weight: 800; color: ${S.ink}; margin-top: 8px; }
@@ -367,9 +494,10 @@ const browser = await puppeteer.launch({ executablePath: chrome, args: ["--no-sa
 const page = await browser.newPage();
 await page.setViewport({ width: W, height: H, deviceScaleFactor: 1 });
 await page.setContent(html, { waitUntil: "networkidle2", timeout: 60000 });
-await page.waitForSelector(S.mode === "board" ? "#stage .board" : S.mode === "canvas" ? "#stage .canvas" : "#stage .scene", { timeout: 30000 });
+await page.waitForSelector(S.mode === "board" ? "#stage .board" : S.mode === "canvas" ? "#stage .canvas" : S.mode === "flow" ? "#stage .flow" : "#stage .scene", { timeout: 30000 });
 await new Promise((r) => setTimeout(r, 400));
 
+if (args.includes("--dump-html")) { await browser.close(); process.stdout.write(html); process.exit(0); }
 if (args.includes("--probe")) {
   await new Promise((r) => setTimeout(r, 7600));
   const info = await page.evaluate(() => {
@@ -384,6 +512,16 @@ if (args.includes("--probe")) {
       const r = el.getBoundingClientRect();
       chips["chip" + i] = { x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height) };
     });
+    // dump every text-bearing element in steps with its rect
+    const texts = [];
+    document.querySelectorAll(".stepcard .scol > *, .stepcard .tile").forEach((el) => {
+      const r = el.getBoundingClientRect();
+      texts.push(`${el.className.split(" ")[0]}: ${JSON.stringify(el.textContent).slice(0, 60)} @x${Math.round(r.x)} y${Math.round(r.y)} w${Math.round(r.width)} h${Math.round(r.height)}`);
+    });
+    document.querySelectorAll(".stepcard .chips > *").forEach((el) => {
+      const r = el.getBoundingClientRect();
+      texts.push(`chip: ${JSON.stringify(el.textContent).slice(0, 50)} @x${Math.round(r.x)} y${Math.round(r.y)} w${Math.round(r.width)}`);
+    });
     return {
       kicker: pick(".kicker"),
       title: pick(".title"),
@@ -392,6 +530,7 @@ if (args.includes("--probe")) {
       cardRects: [...document.querySelectorAll(".card")].map((el) => { const r = el.getBoundingClientRect(); return { x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height) }; }),
       foot: pick(".foot"),
       eq: pick(".eqwrap"),
+      texts,
     };
   });
   console.log(JSON.stringify(info, null, 1));
@@ -433,7 +572,7 @@ console.log(`subsampled: ${used}/${TOTAL}`);
 
 if (posterPath) {
   const wantPoster = (
-    S.mode === "board" || S.mode === "canvas" ? (S.footerTimes?.[1] ?? 8.8) + 0.9 : S.scenes.at(-1).start + 0.8
+    S.mode === "board" || S.mode === "canvas" || S.mode === "flow" ? (S.footerTimes?.[1] ?? 8.8) + 0.9 : S.scenes.at(-1).start + 0.8
   ) * 1000;
   let best = tagged[0];
   for (const fr of tagged) if (Math.abs(fr.t - wantPoster) < Math.abs(best.t - wantPoster)) best = fr;
@@ -444,7 +583,7 @@ if (posterPath) {
 await browser.close();
 rmSync("frames-tagged", { recursive: true, force: true });
 
-const cmd = `ffmpeg -y -framerate ${FPS} -i frames-anim/f_%03d.png -vf "scale=${W}:${H}:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=256[p];[s1][p]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle" -loop 0 ${outGif}`;
+const cmd = `ffmpeg -y -framerate ${FPS} -i frames-anim/f_%03d.png -vf "scale=${W}:${H}:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=256[p];[s1][p]paletteuse=dither=bayer:bayer_scale=4:diff_mode=none" -loop 0 ${outGif}`;
 execSync(cmd, { stdio: ["ignore", "pipe", "inherit"] });
 rmSync("frames-anim", { recursive: true, force: true });
 console.log("GIF saved:", outGif);
