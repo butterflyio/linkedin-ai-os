@@ -1,27 +1,27 @@
 #!/usr/bin/env python3
-"""buffer.py - push an approved draft into your Buffer queue for review.
+"""buffer.py - push an approved draft into your Buffer channel for review.
 
-Flow:  caption_gate PASS -> buffer.py submit -> review/schedule in Buffer UI
-       -> publish. Nothing auto-publishes.
+Flow:  caption_gate PASS -> buffer.py submit -> review in Buffer UI -> publish.
+Nothing posts automatically without --now.
 
-Buffer API: v1 REST  https://api.bufferapp.com/1/
+Buffer API: GraphQL  https://api.buffer.com/graphql  (Bearer token)
+The legacy REST API rejects current tokens and retires Feb 2027, so this tool
+speaks GraphQL only.
 
 Setup (once):
-  1. buffer.com -> Account -> Settings -> API -> "Generate Access Token"
-  2. Provide the token via BUFFER_ACCESS_TOKEN env, --token, or run:
-       python3 tools/buffer.py setup
-     (setup saves the token to ~/.config/buffer-token, chmod 600)
+  buffer.com -> Account -> Settings -> API -> "Generate Access Token", then:
+    python3 tools/buffer.py setup       (saves token, chmod 600)
 
 Usage:
-  python3 tools/buffer.py profiles                     list linked profiles
-  python3 tools/buffer.py submit DRAFT.md              queue now (pending review)
-  python3 tools/buffer.py submit DRAFT.md --when "2026-11-02 09:00"
-                                                      schedule at local time
-  python3 tools/buffer.py submit DRAFT.md --draft     save as draft, no queue
-  python3 tools/buffer.py submit DRAFT.md --gate      run caption_gate first
-  python3 tools/buffer.py submit DRAFT.md --link https://…   attach a link
-  python3 tools/buffer.py submit DRAFT.md --dry-run   show the request, don't send
-  python3 tools/buffer.py profiles --dry-run
+  python3 tools/buffer.py profiles                                   list channels
+  python3 tools/buffer.py submit DRAFT.md                            save as draft (review in Buffer)
+  python3 tools/buffer.py submit DRAFT.md --when "2026-11-02 09:00" schedule at local time
+  python3 tools/buffer.py submit DRAFT.md --queue                    add to the channel queue
+  python3 tools/buffer.py submit DRAFT.md --now                      post immediately (careful)
+  python3 tools/buffer.py submit DRAFT.md --gate                     run caption_gate first
+  python3 tools/buffer.py submit DRAFT.md --link https://…           attach a link
+  python3 tools/buffer.py submit DRAFT.md --profile CHANNEL_ID       pick a channel (default: LinkedIn)
+  python3 tools/buffer.py submit DRAFT.md --dry-run                  show the request only
 """
 
 from __future__ import annotations
@@ -29,38 +29,56 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import subprocess
 import sys
-import urllib.parse
+import urllib.error
 import urllib.request
 from datetime import datetime, timedelta
 from pathlib import Path
 
-API = "https://api.bufferapp.com/1"
+API = "https://api.buffer.com/graphql"
 TOKEN_FILE = Path.home() / ".config" / "buffer-token"
 LINKEDIN_CHAR_LIMIT = 3000
+
+MODE = {
+    "draft": "shareNow",
+    "queue": "addToQueue",
+    "when": "customScheduled",
+    "now": "shareNow",
+}
+
+FRAGMENTS = """
+  ... on PostActionSuccess { post { id dueAt } }
+  ... on NotFoundError { message }
+  ... on UnauthorizedError { message }
+  ... on UnexpectedError { message }
+  ... on LimitReachedError { message }
+  ... on InvalidInputError { message }
+"""
 
 
 class BufferError(Exception):
     pass
 
 
-def api(path: str, params: dict, method: str = "GET") -> dict:
-    params = {k: v for k, v in params.items() if v is not None and v != ""}
-    if method == "GET":
-        qs = urllib.parse.urlencode(params)
-        url = f"{API}{path}?{qs}"
-        req = urllib.request.Request(url)
-    else:
-        url = f"{API}{path}"
-        req = urllib.request.Request(url, data=urllib.parse.urlencode(params).encode(), method="POST")
+def gql(token: str, query: str) -> dict:
+    req = urllib.request.Request(
+        API,
+        data=json.dumps({"query": query}).encode(),
+        headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+        method="POST",
+    )
     try:
         with urllib.request.urlopen(req, timeout=30) as res:
-            return json.loads(res.read().decode())
+            data = json.loads(res.read().decode())
     except urllib.error.HTTPError as err:
-        body = err.read().decode(errors="replace")[:400]
-        raise BufferError(f"HTTP {err.code} from Buffer: {body}") from err
+        raise BufferError(f"HTTP {err.code} from Buffer: {err.read().decode(errors='replace')[:400]}") from err
     except urllib.error.URLError as err:
         raise BufferError(f"network error: {err.reason}") from err
+    if data.get("errors"):
+        msgs = "; ".join(e.get("message", str(e)) for e in data["errors"])
+        raise BufferError(f"GraphQL error: {msgs}")
+    return data.get("data", {})
 
 
 def load_token(args) -> str:
@@ -73,6 +91,23 @@ def load_token(args) -> str:
             "or run 'python3 tools/buffer.py setup'."
         )
     return token
+
+
+def organization_id(token: str) -> str:
+    data = gql(token, "{ account { organizations { id name } } }")
+    orgs = (data.get("account") or {}).get("organizations") or []
+    if not orgs:
+        raise BufferError("No organization found for this account.")
+    return orgs[0]["id"]
+
+
+def list_channels(token: str):
+    org = organization_id(token)
+    data = gql(
+        token,
+        '{ channels(input: { organizationId: "%s" }) { id name service displayName type } }' % org,
+    )
+    return data.get("channels") or []
 
 
 def cmd_setup(_args) -> int:
@@ -89,18 +124,17 @@ def cmd_setup(_args) -> int:
 
 def cmd_profiles(args) -> int:
     token = load_token(args)
-    params = {"access_token": token}
     if args.dry_run:
-        print("[dry-run] GET", f"{API}/profiles.json", {"access_token": "***"})
+        print("[dry-run] GraphQL query: account -> organizations -> channels")
         return 0
-    data = api("/profiles.json", params)
-    profiles = data if isinstance(data, list) else data.get("data", [])
-    if not profiles:
-        print("No profiles linked to this Buffer account.")
+    channels = list_channels(token)
+    if not channels:
+        print("No channels linked to this Buffer account.")
         return 1
-    for p in profiles:
-        print(f"  {p['id']}  {p.get('service', ''):<10} {p.get('formatted_username', p.get('name', ''))}")
-    print(f"{len(profiles)} profile(s). Use the id with --profile.")
+    for c in channels:
+        marker = "  <-- linkedin (default for submit)" if c.get("service") == "linkedin" else ""
+        print(f"  {c['id']}  {c.get('service',''):<12} {c.get('displayName',''):<24} {c.get('name','')}{marker}")
+    print(f"{len(channels)} channel(s). Use the id with --profile.")
     return 0
 
 
@@ -113,7 +147,10 @@ def cmd_submit(args) -> int:
         return 1
 
     if args.gate:
-        gate = [r for r in run_gate(Path(args.draft))]
+        gate = subprocess.run(
+            [sys.executable, str(Path(__file__).parent / "caption_gate.py"), str(args.draft)],
+            capture_output=True, text=True,
+        ).stdout.splitlines()
         for line in gate:
             print(line)
         if any("FAIL" in r for r in gate):
@@ -121,83 +158,98 @@ def cmd_submit(args) -> int:
             return 1
         print("Gate: PASS")
 
-    params = {
-        "access_token": token,
-        "profile_ids[]": args.profile,
-        "text": text,
-        "shorten": "false",
-    }
-    if args.link:
-        params["media[link]"] = args.link
-    if args.draft:
-        params["draft"] = "true"
+    # pick the LinkedIn channel by default
+    if not args.profile:
+        channels = list_channels(token)
+        linkedin = next((c for c in channels if c.get("service") == "linkedin"), None)
+        if not linkedin:
+            raise BufferError("No LinkedIn channel found. Pass --profile <channel-id> to pick another.")
+        args.profile = linkedin["id"]
+        print(f"Using LinkedIn channel: {linkedin.get('displayName')} ({args.profile})")
+
+    save_to_draft = args.draft_flag or not (args.when or args.queue or args.now)
+    mode = MODE["when"] if args.when else (MODE["queue"] if args.queue else (MODE["now"] if args.now else MODE["draft"]))
+    due_at = None
     if args.when:
         try:
-            dt = datetime.strptime(args.when, "%Y-%m-%d %H:%M")
+            dt = datetime.strptime(args.when, "%Y-%m-%d %H:%M").astimezone()
         except ValueError as err:
-            raise BufferError('--when format: "YYYY-MM-DD HH:MM" in your local timezone') from err
-        if dt <= datetime.now() + timedelta(minutes=5):
+            raise BufferError('--when format: "YYYY-MM-DD HH:MM" (your local timezone)') from err
+        if dt <= datetime.now().astimezone() + timedelta(minutes=5):
             raise BufferError("--when must be at least 5 minutes in the future.")
-        params["scheduled_at"] = str(int(dt.timestamp()))
+        due_at = dt.isoformat(timespec="seconds")
+
+    assets = "[]"
+    if args.link:
+        assets = json.dumps([{"document": {"url": args.link}}])
+
+    input_fields = {
+        "channelId": args.profile,
+        "text": json.dumps(text),
+        "assets": assets,
+        "tagIds": "[]",
+        "mode": mode,
+        "schedulingType": "automatic",
+        "needsApproval": "false",
+        "saveToDraft": "true" if save_to_draft else "false",
+    }
+    if due_at:
+        input_fields["dueAt"] = json.dumps(due_at)
+    fields = "\n".join(f"    {k}: {v}" for k, v in input_fields.items())
+    query = "mutation {\n  createPost(input: {\n%s\n  }) {\n%s  }\n}" % (fields, FRAGMENTS)
 
     if args.dry_run:
-        safe = {k: ("***" if "token" in k else v) for k, v in params.items()}
-        print("[dry-run] POST", f"{API}/updates/create.json", safe)
-        print(f"[dry-run] text ({len(text)} chars):\n\n{text[:300]}{'...' if len(text) > 300 else ''}")
+        print("[dry-run] POST", API)
+        print("[dry-run] mutation createPost(input: {")
+        for k, v in input_fields.items():
+            shown = v if "text" not in k else f"<{len(text)} chars>"
+            print(f"  {k}: {shown}")
+        print("  })")
         return 0
 
-    data = api("/updates/create.json", params, method="POST")
-    update = data if isinstance(data, dict) else {}
-    url = update.get("url") or (update.get("updates") or [{}])[0].get("url", "")
-    when = args.when or ("draft" if args.draft else "immediately (pending review)")
-    print(f"OK: update sent to Buffer, {when}.")
-    if url:
-        print(f"Review it: {url}")
+    data = gql(token, query)
+    result = data.get("createPost") or {}
+    if "post" in result:
+        post = result["post"]
+        when = "draft" if save_to_draft else (due_at or ("queue" if args.queue else "now"))
+        print(f"OK: post sent to Buffer as {when}.")
+        print(f"post id: {post['id']}")
+        if post.get("dueAt"):
+            print(f"scheduled for: {post['dueAt']}")
+        print("Review it in the Buffer drafts/queue UI.")
+    elif result.get("message"):
+        raise BufferError(result["message"])
+    else:
+        raise BufferError(f"unexpected response: {json.dumps(result)[:200]}")
     return 0
 
 
-def run_gate(path: Path):
-    """Reuse caption_gate.py as a subprocess."""
-    import subprocess
-
-    proc = subprocess.run([sys.executable, str(Path(__file__).parent / "caption_gate.py"), str(path)], capture_output=True, text=True)
-    return proc.stdout.splitlines()
-
-
 def main(argv) -> int:
-    parser = argparse.ArgumentParser(description="Buffer publisher for the LinkedIn AI OS")
+    parser = argparse.ArgumentParser(description="Buffer publisher for the LinkedIn AI OS (GraphQL)")
     parser.add_argument("--token", help="Buffer access token (or BUFFER_ACCESS_TOKEN env)")
     sub = parser.add_subparsers(dest="command", required=True)
 
     p_setup = sub.add_parser("setup", help="save your Buffer access token")
     p_setup.set_defaults(func=cmd_setup)
 
-    p_profiles = sub.add_parser("profiles", help="list linked Buffer profiles")
+    p_profiles = sub.add_parser("profiles", help="list linked Buffer channels")
     p_profiles.add_argument("--dry-run", action="store_true")
     p_profiles.set_defaults(func=cmd_profiles)
 
     p_submit = sub.add_parser("submit", help="push a draft into Buffer")
     p_submit.add_argument("draft", help="path to the approved draft file")
-    p_submit.add_argument("--profile", help="Buffer profile id (default: first profile)")
-    p_submit.add_argument("--when", help='"YYYY-MM-DD HH:MM" local time, or leave empty for review queue')
-    p_submit.add_argument("--draft", action="store_true", help="save as draft, do not queue")
+    p_submit.add_argument("--profile", help="Buffer channel id (default: LinkedIn channel)")
+    p_submit.add_argument("--when", help='"YYYY-MM-DD HH:MM" local time, schedules the post')
+    p_submit.add_argument("--queue", action="store_true", help="add to the channel queue")
+    p_submit.add_argument("--now", action="store_true", help="post immediately (careful)")
+    p_submit.add_argument("--draft", dest="draft_flag", action="store_true", help="save as draft (default behavior)")
     p_submit.add_argument("--gate", action="store_true", help="run caption_gate.py first")
-    p_submit.add_argument("--link", help="attach a link (media[link])")
+    p_submit.add_argument("--link", help="attach a link (document asset)")
     p_submit.add_argument("--dry-run", action="store_true")
     p_submit.set_defaults(func=cmd_submit)
 
     args = parser.parse_args(argv)
     try:
-        if args.command == "submit" and not args.profile:
-            # lazily resolve the first profile so submit works without config
-            token = load_token(args)
-            if not args.dry_run and not args.profile:
-                data = api("/profiles.json", {"access_token": token})
-                profiles = data if isinstance(data, list) else data.get("data", [])
-                if not profiles:
-                    raise BufferError("No profiles linked. Run 'python3 tools/buffer.py profiles'.")
-                args.profile = profiles[0]["id"]
-                print(f"Using first profile: {args.profile}")
         return args.func(args)
     except BufferError as err:
         print(f"error: {err}", file=sys.stderr)

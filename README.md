@@ -45,25 +45,28 @@ non-zero on failure so it can block a publish pipeline.
 
 ## buffer.py (schedule for review)
 
-Push an approved draft into your Buffer queue as a review item. Nothing ships
-until you approve it in the Buffer UI - this is the human gate.
+Push an approved draft into your Buffer channel as a review item. Nothing
+ships until you approve it in the Buffer UI - this is the human gate.
+Speaks Buffer's GraphQL API (the legacy REST API rejects current tokens).
 
 Setup (once): generate an access token in Buffer (Account -> Settings -> API)
-and either export BUFFER_ACCESS_TOKEN or run:
+and run:
 
     python3 tools/buffer.py setup      # stores token at ~/.config/buffer-token
-    python3 tools/buffer.py profiles   # find your profile id
+    python3 tools/buffer.py profiles   # list channels (LinkedIn is the default)
 
-Ship a draft:
+Ship a draft (default: save as draft in Buffer, you approve there):
 
     python3 tools/buffer.py submit test-drafts/post.md --gate
     python3 tools/buffer.py submit test-drafts/post.md --gate --when "2026-11-02 09:00"
-    python3 tools/buffer.py submit test-drafts/post.md --gate --draft
-    python3 tools/buffer.py submit test-drafts/post.md --dry-run   # preview only
+    python3 tools/buffer.py submit test-drafts/post.md --gate --queue
+    python3 tools/buffer.py submit test-drafts/post.md --gate --now     # immediate
+    python3 tools/buffer.py submit test-drafts/post.md --dry-run         # preview only
 
 Flags: --gate runs caption_gate.py first and blocks on FAIL, --when schedules
-(local time, must be 5+ minutes out), --draft saves without queuing, --link
-attaches a URL, --profile picks a profile id.
+(local time, 5+ minutes out), --queue adds to the channel queue, --now posts
+immediately, --draft forces draft mode (the default), --link attaches a URL,
+--profile picks a channel id.
 
 ## Animated infographics
 
