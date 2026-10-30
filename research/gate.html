@@ -80,10 +80,10 @@ async function loadReview() {
   const r = await fetch(FILE); if (!r.ok) throw new Error("can't fetch " + FILE);
   const txt = await r.text();
   const rows = [];
-  const re = /^- \[ \] (R\d+)\s*\|\s*([^|]{1,90})\s*\|\s*([^|]{3,20})\s*\|\s*(\S+)(?:\s*\|\s*via:\s*([^|]+))?/gm;
+  const re = /^- \[ \] (R\d+)\s*\|\s*([^|]{1,90})\s*\|\s*([^|]{3,20})\s*\|\s*(\S+)(?:\s*\|\s*via:\s*([^¶]+))?\s*¶\s*(.*)$/gm;
   let m;
   while ((m = re.exec(txt)) !== null) {
-    rows.push({ id: m[1], title: m[2].trim(), tier: m[3].trim(), url: m[4].trim(), via: (m[5] || "").trim() });
+    rows.push({ id: m[1], title: m[2].trim(), tier: m[3].trim(), url: m[4].trim(), via: (m[5] || "").trim(), brief: (m[6] || "").trim() });
   }
   return rows;
 }
@@ -108,8 +108,9 @@ function render() {
         </div>
         ${tagsLayout(d)}
         ${d.via ? `<div class="via">also surfaced on: <b>${d.via}</b></div>` : ""}
+        ${d.brief ? `<div class="sumtext" style="display:block">${d.brief}</div>` : ""}
         <a href="${d.url}" target="_blank" rel="noopener">${d.url.replace("https://","")}</a>
-        <div><button class="sum" data-id="${d.id}">read summary</button></div>
+        <div><button class="sum" data-id="${d.id}">read more (AI)</button></div>
         <div class="sumtext" id="sum_${d.id}" hidden></div>
       </div>
     </div>`).join("");

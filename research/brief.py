@@ -133,6 +133,7 @@ def hn(queries, days):
                 "author": (h.get("author") or "")[:40],
                 "date": datetime.datetime.fromtimestamp(ts, datetime.timezone.utc), "platform": "HN",
                 "signal": h.get("points") or 0, "sub": "Hacker News",
+                "snippet": (h.get("text") or "")[:240],
             })
     return items
 
@@ -157,6 +158,7 @@ def reddit_archive(subs, days, limit=15):
                 "author": (p.get("author") or "")[:40],
                 "date": datetime.datetime.fromtimestamp(ts, datetime.timezone.utc), "platform": "Reddit",
                 "signal": p.get("score") or 0, "sub": f"r/{sub}",
+                "snippet": (p.get("selftext") or "").replace("\n", " ")[:240],
             })
     return items
 
@@ -183,7 +185,8 @@ def serper(query, key, days=7):
                 except Exception:
                     continue
         items.append({"title": (r.get("title") or "")[:150], "url": r.get("link", ""),
-                      "date": ts or now_utc(), "platform": "Google/Serper", "signal": 0, "sub": "", "dated": bool(ts)})
+                      "date": ts or now_utc(), "platform": "Google/Serper", "signal": 0, "sub": "", "dated": bool(ts),
+                      "snippet": (r.get("snippet") or "")[:240]})
     return items
 
 
@@ -208,7 +211,7 @@ def exa_search(query, key, days=7):
                 pass
         items.append({"title": (r.get("title") or "")[:150], "url": r.get("url", ""),
                       "date": ts or now_utc(), "platform": "Exa", "signal": 0, "sub": r.get("source",""),
-                      "dated": ts is not None})
+                      "dated": ts is not None, "snippet": (r.get("text") or r.get("snippet") or "")[:240]})
     return items
 
 
@@ -232,7 +235,7 @@ def firecrawl_search(query, key):
                 pass
         items.append({"title": (r.get("title") or "")[:150], "url": r.get("url", ""),
                       "date": ts or now_utc(), "platform": "Firecrawl", "signal": 0, "sub": r.get("domain",""),
-                      "dated": ts is not None})
+                      "dated": ts is not None, "snippet": (r.get("description") or r.get("snippet") or "")[:240]})
     return items
 
 
@@ -253,7 +256,7 @@ def serpapi(query, key, days=7):
             link = clean_link(link)
         items.append({"title": (r.get("title") or "")[:150], "url": link,
                       "date": now_utc(), "platform": "Google/SerpAPI", "signal": 0, "sub": r.get("source",""),
-                      "dated": False})
+                      "dated": False, "snippet": (r.get("snippet") or "")[:240]})
     return items
 
 
@@ -294,7 +297,36 @@ def scrapegraph_search(query, key, days=7):
     items = []
     for r in rows[:6]:
         items.append({"title": (r.get("title") or "")[:150], "url": r.get("url", ""),
-                      "date": now_utc(), "platform": "ScrapeGraph", "signal": 0, "sub": "", "dated": False})
+                      "date": now_utc(), "platform": "ScrapeGraph", "signal": 0, "sub": "", "dated": False,
+                      "snippet": (r.get("snippet") or r.get("description") or "")[:240]})
+    return items
+
+
+def perplexity_search(query, key, max_results=8, search_type="fast"):
+    """Perplexity Search API (POST /search). Ranked web results as structured
+    data - no generated answer. Docs: https://docs.perplexity.ai/docs/search/quickstart
+    search_type 'fast' = lower-cost results (we prefer cost over latency)."""
+    body = json.dumps({"query": query, "max_results": max_results, "search_type": search_type}).encode()
+    out = subprocess.run(["curl", "-sL", "-m", "40", "-X", "POST", "https://api.perplexity.ai/search",
+                          "-H", f"Authorization: Bearer {key}", "-H", "Content-Type: application/json", "-d", body],
+                         capture_output=True, text=True).stdout
+    try:
+        d = json.loads(out)
+        res = d.get("results", [])
+    except Exception:
+        return []
+    items = []
+    for r in res[:max_results]:
+        ts = None
+        raw = r.get("date") or r.get("last_updated")
+        if raw:
+            try:
+                ts = datetime.datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+            except Exception:
+                pass
+        items.append({"title": (r.get("title") or "")[:150], "url": r.get("url", ""),
+                      "date": ts or now_utc(), "platform": "Perplexity", "signal": 0, "sub": "",
+                      "dated": ts is not None, "snippet": (r.get("snippet") or "")[:240]})
     return items
 
 
@@ -310,7 +342,7 @@ def jina_search(query, key):
         if not title.strip():
             continue
         items.append({"title": title.strip()[:150], "url": u, "date": now_utc(),
-                      "platform": "Jina", "signal": 0, "sub": "", "dated": False})
+                      "platform": "Jina", "signal": 0, "sub": "", "dated": False, "snippet": ""})
     return items
 
 
@@ -446,6 +478,7 @@ def tavily(query, days, key):
         items.append({
             "title": (r.get("title") or "")[:150], "url": r.get("url", ""),
             "date": ts or now_utc(), "platform": "Web", "signal": 0, "sub": r.get("domain", ""), "ts_probe": bool(ts),
+                      "snippet": (r.get("content") or r.get("snippet") or "")[:240],
         })
     return items, None
 
@@ -564,6 +597,15 @@ def run(args):
     else:
         coverage.append("Jina: skipped (no JINA_API_KEY)")
 
+    if os.environ.get("PERPLEXITY_API_KEY"):
+        pit = []
+        for q in all_queries[:6]:
+            pit += perplexity_search(q, os.environ["PERPLEXITY_API_KEY"])
+        all_items += pit
+        coverage.append(f"Perplexity Search (fast, first {min(6, len(all_queries))} facet queries): {len(pit)} results")
+    else:
+        coverage.append("Perplexity Search: skipped (no PERPLEXITY_API_KEY)")
+
     if os.environ.get("X_BEARER_TOKEN") and len(os.environ["X_BEARER_TOKEN"]) > 6:
         got = 0
         for q in all_queries[:4]:
@@ -601,7 +643,9 @@ def run(args):
     coverage.append("Reddit: using Arctic Shift archive + site:reddit.com web hits")
 
     # window + de-dup + source quality + ranking
-    items = [i for i in all_items if i["date"] >= cutoff and host_of(i.get("url", "")) != "en.wikipedia.org"]
+    def _aware(dt):
+        return dt.replace(tzinfo=datetime.timezone.utc) if getattr(dt, "tzinfo", None) is None else dt
+    items = [i for i in all_items if (i.get("date") and _aware(i["date"]) >= cutoff) and host_of(i.get("url", "")) != "en.wikipedia.org"]
     for i in items:
         i["tier"] = tier_of(i.get("url", ""), i.get("platform", ""))
     items = [i for i in items if i["tier"] != "Blocked"]  # drop content farms
@@ -636,10 +680,19 @@ def run(args):
             if x and y and len(x & y) >= 3 and other["url"] not in seen:
                 seen.add(other["url"])
                 it["srcs"].append((other["platform"], other["url"]))
+    # community/index threads carry no snippet; borrow one from a web sibling
+    # (same story) so every gate row shows a brief
+    for it in uniq:
+        if it.get("snippet"):
+            continue
+        for other in uniq:
+            if other is not it and other.get("snippet") and len(toks(it["title"]) & toks(other["title"])) >= 3:
+                it["snippet"] = other["snippet"]
+                break
     tb = {"Tier1": 1.5, "Tier2": 1.0, "Expert": 0.9, "Community": 0.9, "Index": 0.2}
     def score(i):
         s = math.log10(max(i.get("signal") or 1, 1))
-        rec = 0.5 if i["date"] >= now_utc() - datetime.timedelta(days=2) else 0.3 if i["date"] >= now_utc() - datetime.timedelta(days=4) else 0.15
+        rec = 0.5 if _aware(i["date"]) >= now_utc() - datetime.timedelta(days=2) else 0.3 if _aware(i["date"]) >= now_utc() - datetime.timedelta(days=4) else 0.15
         cross = 0.6 * (i.get("cluster", 1) - 1)
         return s + tb.get(i["tier"], 0.4) + rec + cross
     for i in uniq:
@@ -668,6 +721,9 @@ def run(args):
         plats = sorted({p for p, _ in i.get("srcs", [])})
         if len(plats) > 1:
             via = " | via: " + ",".join(plats)
+        sn = " ".join((i.get("snippet") or "").split())[:140]
+        if sn:
+            via += " ¶ " + sn
         out.append(f"- [ ] R{themes.index(i) + 1} | {i['title'][:64]} | {i['tier']} | {i['url']}{via}")
     out += ["", "## Coverage note", ""]
     out += [f"- {c}" for c in coverage]
@@ -716,19 +772,13 @@ def main(argv):
                 except Exception:
                     body = ""
             verdict, why, okv = perplexity_verify(t, u, key, body)
-            summ = perplexity_summary(t, u, key, body)
-            sway = str(summ.get("summary", "") or "")[:700]
-            kp = summ.get("key_points") or []
-            rel = str(summ.get("relevance", "") or "")[:200]
             wt, we, wl = wikipedia_summary(t)
             arx = arxiv_papers(t)
             out.append(f"- **Verdict**: {verdict} - {why}")
-            if sway:
-                out.append(f"- **Summary**: {sway}")
-            for k in kp[:2]:
-                out.append(f"  - {k}")
-            if rel:
-                out.append(f"- **Relevance for Zain**: {rel}")
+            if body:
+                out.append(f"- **Summary (from the page’s own text)**: {body[:640]}")
+            else:
+                out.append("- **Summary**: (page not accessible at verify time - content unread; treat with care)")
             if wt:
                 out.append(f"- **Wikipedia**: {wt} - {we} ( {wl} )")
             if arx:
