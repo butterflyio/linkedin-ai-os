@@ -1,0 +1,27 @@
+infographic sequence-circular-simple
+data
+  title The open person company
+  desc From an empty GitHub to 678 contributions. One person plus a stack. Drafted by the stack itself.
+  sequences
+    - label 2019
+      value 0
+      desc GitHub sat nearly empty
+      icon flag
+    - label 2025
+      value 1
+      desc Goal: learn the terminal, use AI safely
+      icon target
+    - label 2026
+      value 678
+      desc Contributions later, the fear was gone
+      icon rocket
+    - label BUILD
+      value 2
+      desc Promptraise and BuzzzAgentic
+      icon cpu
+    - label NOW
+      value 1
+      desc One person, the stack, this post
+      icon zap
+theme
+  palette #3b82f6 #06b6d4 #10b981 #f59e0b #ef4444

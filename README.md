@@ -31,7 +31,9 @@ is Zain's, not the mean of every bot on LinkedIn.
 2. hook-generator -> pick the hook.
 3. post-writer -> full draft.
 4. post-scorer + caption_gate.py -> PASS.
-5. Human approves. Nothing posts automatically.
+5. (Optional) Animated infographic for the post (see below).
+6. buffer.py -> push into Buffer for review.
+7. Human approves in Buffer. Nothing posts automatically.
 
 ## caption_gate.py
 
@@ -40,6 +42,49 @@ non-zero on failure so it can block a publish pipeline.
 
     python3 tools/caption_gate.py draft.md
     python3 tools/caption_gate.py --demo   # self-check
+
+## buffer.py (schedule for review)
+
+Push an approved draft into your Buffer queue as a review item. Nothing ships
+until you approve it in the Buffer UI - this is the human gate.
+
+Setup (once): generate an access token in Buffer (Account -> Settings -> API)
+and either export BUFFER_ACCESS_TOKEN or run:
+
+    python3 tools/buffer.py setup      # stores token at ~/.config/buffer-token
+    python3 tools/buffer.py profiles   # find your profile id
+
+Ship a draft:
+
+    python3 tools/buffer.py submit test-drafts/post.md --gate
+    python3 tools/buffer.py submit test-drafts/post.md --gate --when "2026-11-02 09:00"
+    python3 tools/buffer.py submit test-drafts/post.md --gate --draft
+    python3 tools/buffer.py submit test-drafts/post.md --dry-run   # preview only
+
+Flags: --gate runs caption_gate.py first and blocks on FAIL, --when schedules
+(local time, must be 5+ minutes out), --draft saves without queuing, --link
+attaches a URL, --profile picks a profile id.
+
+## Animated infographics
+
+The post can ship with a branded animated infographic, built from a small
+DSL file and rendered locally (no design tool, no uploads):
+
+    # verify content fast (no browser):
+    node scratch/ssr-render.mjs scratch/open-person-infographic.dsl.txt /tmp/check.svg
+
+    # static PNG (retina) and animated loop GIF:
+    node scratch/render-png.mjs scratch/open-person-infographic.dsl.txt "Open Person Company" out.png [chromium]
+    node scratch/render-gif.mjs scratch/open-person-infographic.dsl.txt out.gif [chromium]
+
+The GIF pops badges in one by one with a highlight sweep, ends on a hold,
+and loops (800x673, ~0.5 MB, fits LinkedIn's media limits). Chromium example:
+~/.cache/pptr/chrome-headless-shell/*/chrome-headless-shell-linux64/chrome-headless-shell
+(install with: npx @puppeteer/browsers install chrome-headless-shell@stable).
+Requires ffmpeg for GIF encoding.
+
+Existing DSLs: scratch/incident-infographic.dsl.txt (stats sequence),
+scratch/open-person-infographic.dsl.txt (founder journey).
 
 ## Install (portable)
 
