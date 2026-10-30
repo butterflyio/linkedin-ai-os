@@ -38,6 +38,9 @@ ask EXA_API_KEY         "Exa (expert/semantic content)"                  "https:
 ask FIRECRAWL_API_KEY   "Firecrawl (full-article scraping)"              "https://firecrawl.dev -> API key. Optional."
 ask SERPER_API_KEY      "Serper (Google SERP + LinkedIn results)"        "https://serper.dev -> API key. Optional."
 ask X_BEARER_TOKEN      "X/Twitter API bearer token"                     "https://developer.x.com -> basic tier, app settings -> bearer token. Optional."
+ask SERPAPI_KEY         "Google SerpAPI (true Google SERP)"                "https://serpapi.com -> API key. Optional; some free search credits."
+ask JINA_API_KEY        "Jina Reader/search key"                            "https://jina.ai -> API key. Optional; raises the free reader rate limit."
+ask SCRAPEGRAPH_API_KEY "ScrapeGraph AI (search/scrape)"                   "https://scrapegraphai.com -> Dashboard -> API key. Optional; adds search + page scraping."
 
 echo ""; echo "Done. research/.env updated (permissions 600)."
 echo "Test with:  python3 research/brief.py --out research/niche-brief-test.md"

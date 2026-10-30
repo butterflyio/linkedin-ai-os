@@ -238,6 +238,40 @@ def x_recent(query, key, days=7):
     return items
 
 
+def scrapegraph_search(query, key, days=7):
+    """ScrapeGraph AI search (web search with freshness hints)."""
+    body = json.dumps({"query": query, "limit": 6, "country": "us", "languages": ["en"]}).encode()
+    out = subprocess.run(["curl", "-sL", "-m", "30", "-X", "POST", "https://api.scrapegraphai.com/v1/search",
+                          "-H", f"SGS-API-KEY: {key}", "-H", "Content-Type: application/json", "-d", body],
+                         capture_output=True, text=True).stdout
+    try:
+        d = json.loads(out)
+    except Exception:
+        return []
+    rows = d.get("result") or d.get("results") or []
+    items = []
+    for r in rows[:6]:
+        items.append({"title": (r.get("title") or "")[:150], "url": r.get("url", ""),
+                      "date": now_utc(), "platform": "ScrapeGraph", "signal": 0, "sub": "", "dated": False})
+    return items
+
+
+def jina_search(query, key):
+    """Jina search (s.jina.ai) - returns markdown; we parse links. No date filter,
+    items are marked undated so the window check keeps them provisional."""
+    url = "https://s.jina.ai/" + urllib.parse.quote(query)
+    out = subprocess.run(["curl", "-sL", "-m", "30", "-A", "Mozilla/5.0",
+                          "-H", f"Authorization: Bearer {key}", url], capture_output=True, text=True).stdout
+    links = re.findall(r"\[(.*?)\]\((https?://[^)\s]+)\)", out)
+    items = []
+    for title, u in links[:8]:
+        if not title.strip():
+            continue
+        items.append({"title": title.strip()[:150], "url": u, "date": now_utc(),
+                      "platform": "Jina", "signal": 0, "sub": "", "dated": False})
+    return items
+
+
 def jina_read(url, key=None):
     """Jina Reader: any URL -> clean text (free; optional key lifts rate limits)."""
     h = ["-H", "Accept: application/json"] if False else (["-H", f"Authorization: Bearer {key}"] if key else [])
@@ -358,7 +392,21 @@ def run(args):
     else:
         coverage.append("Firecrawl: skipped (no FIRECRAWL_API_KEY)")
 
-    if os.environ.get("X_BEARER_TOKEN"):
+    if os.environ.get("SCRAPEGRAPH_API_KEY"):
+        for q in all_queries:
+            all_items += scrapegraph_search(q, os.environ["SCRAPEGRAPH_API_KEY"], days)
+        coverage.append(f"ScrapeGraph AI (search): {len(all_queries)} queries")
+    else:
+        coverage.append("ScrapeGraph AI: skipped (no SCRAPEGRAPH_API_KEY)")
+
+    if os.environ.get("JINA_API_KEY"):
+        for q in all_queries[:6]:
+            all_items += jina_search(q, os.environ["JINA_API_KEY"])
+        coverage.append("Jina (search + reader ready): 6 queries")
+    else:
+        coverage.append("Jina: skipped (no JINA_API_KEY)")
+
+    if os.environ.get("X_BEARER_TOKEN") and len(os.environ["X_BEARER_TOKEN"]) > 6:
         got = 0
         for q in all_queries[:4]:
             it = x_recent(q, os.environ["X_BEARER_TOKEN"], days)
@@ -366,14 +414,14 @@ def run(args):
             all_items += it
         coverage.append(f"X (Twitter API v2 recent search): {got} tweets (check tier permission if 0)")
     else:
-        coverage.append("X: skipped (no X_BEARER_TOKEN)")
+        coverage.append("X: skipped (no valid X_BEARER_TOKEN)")
 
-    for prov in ("REDDIT_CLIENT_ID", "JINA_API_KEY"):
-        if os.environ.get(prov):
-            coverage.append(f"{prov.split('_')[0]}: enabled")
+    for prov in ("REDDIT_CLIENT_ID",):
+        if os.environ.get(prov) and len(os.environ.get(prov, "")) > 6:
+            coverage.append("Reddit official: enabled")
         else:
-            coverage.append(f"{prov.split('_')[0]}: skipped (no key)")
-    coverage.append("Reddit: official API parked (no app yet); using Arctic Shift archive + site:reddit.com web hits instead")
+            coverage.append("Reddit official: skipped (no app yet)")
+    coverage.append("Reddit: using Arctic Shift archive + site:reddit.com web hits")
 
     # window + de-dup (dated news items get a small boost so web hits aren't
     # buried under high-score HN/Reddit posts)
