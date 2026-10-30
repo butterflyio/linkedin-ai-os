@@ -1,0 +1,26 @@
+{
+  "mode": "canvas",
+  "size": [1080, 1350],
+  "fps": 15,
+  "duration": 12.0,
+  "ink": "#1a1a1a",
+  "inkSoft": "#5b5b66",
+  "kicker": "One founder. One stack.",
+  "kickerAccent": "#ff6b35",
+  "title": ["The open person", "company."],
+  "bg": "linear-gradient(180deg,#ffffff 0%,#eef2ff 18%,#f8f0fd 40%,#fff3e8 62%,#e8f8ee 84%,#e8f8ee 100%)",
+  "chipsStart": 0.85,
+  "chipsStep": 0.16,
+  "chips": [
+    { "x": 16, "y": 34, "num": 0, "label": "GITHUB 2019", "desc": "sat nearly empty", "accent": "#3d7eff" },
+    { "x": 84, "y": 33, "num": 1, "label": "GOAL 2025", "desc": "learn the terminal", "accent": "#2fa36b" },
+    { "x": 50, "y": 33, "num": 678, "label": "CONTRIBUTIONS 2026", "desc": "the fear was gone", "accent": "#ff6b35", "hero": true },
+    { "x": 16, "y": 56, "num": 2, "label": "TWO BUILDS", "desc": "Promptraise +\nBuzzzAgentic", "accent": "#7b5bd6" },
+    { "x": 84, "y": 56, "label": "NOW", "desc": "this post, drafted by\nthe stack itself", "accent": "#0ea5a5" }
+  ],
+  "pills": ["one person", "a real stack", "judgment stays human"],
+  "pillStart": 3.4,
+  "footer": ["draft → gate → my approval", "What would you hand to an agent first?"],
+  "footerTimes": [4.8, 5.3],
+  "dots": 10
+}
