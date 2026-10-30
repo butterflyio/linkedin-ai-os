@@ -1,0 +1,71 @@
+{
+  "size": [1080, 1350],
+  "fps": 15,
+  "duration": 12.5,
+  "ink": "#1a1a1a",
+  "inkSoft": "#555555",
+  "scenes": [
+    {
+      "name": "hook",
+      "bg": "#ffffff",
+      "accent": "#ff6b35",
+      "start": 0.0,
+      "len": 1.9,
+      "big": ["For years,", "the terminal", "scared me."],
+      "bigAccent": [],
+      "sub": ["Now it writes this post."]
+    },
+    {
+      "name": "goal",
+      "bg": "#e8f1fe",
+      "accent": "#3d7eff",
+      "start": 1.9,
+      "len": 2.1,
+      "big": ["2025.", "one goal."],
+      "sub": ["Learn the terminal anyway.", "Use AI safely."]
+    },
+    {
+      "name": "fear-gone",
+      "bg": "#e9f6ee",
+      "accent": "#2fa36b",
+      "start": 4.0,
+      "len": 2.1,
+      "big": ["678", "contributions later."],
+      "bigAccent": [0],
+      "sub": ["The fear was gone."]
+    },
+    {
+      "name": "two-builds",
+      "bg": "#fdf0e8",
+      "accent": "#ff6b35",
+      "start": 6.1,
+      "len": 2.1,
+      "big": ["Two builds."],
+      "sub": ["Promptraise. BuzzzAgentic.", "Web3 visibility. Socials from Telegram."]
+    },
+    {
+      "name": "this-post",
+      "bg": "#f4effb",
+      "accent": "#7b5bd6",
+      "start": 8.2,
+      "len": 2.0,
+      "big": ["This post?", "Drafted by the stack."],
+      "bigAccent": [0],
+      "sub": ["Gateway, agent, my approval."]
+    },
+    {
+      "name": "punchline",
+      "bg": "#ffffff",
+      "accent": "#ff6b35",
+      "start": 10.2,
+      "len": 1.9,
+      "bigT": [0.2, 0.5],
+      "big": ["The open person", "company."],
+      "bigAccent": [],
+      "subT": [0.85, 1.1, 1.4],
+      "sub": ["One person. A real stack.", "Judgment stays human.", "What would you hand to an agent first?"],
+      "subEmphasis": [1],
+      "pop": true
+    }
+  ]
+}

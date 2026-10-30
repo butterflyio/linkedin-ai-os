@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><style>
+html, body { margin: 0; padding: 0; background: #fff; overflow: hidden; }
+#stage { width: 1080px; height: 1350px; position: relative; font-family: -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+.scene { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; box-sizing: border-box; }
+.rows { display: flex; flex-direction: column; align-items: center; padding: 0 80px; }
+.big { font-size: 106px; font-weight: 900; color: #1a1a1a; line-height: 1.07; letter-spacing: -0.02em; }
+.big.wm { font-size: 84px; }
+.big.wl { font-size: 66px; }
+.sub { font-size: 47px; font-weight: 600; color: #555555; line-height: 1.25; margin-top: 12px; }
+.sub.wm { font-size: 41px; }
+.sub.emphasis { color: #1a1a1a; font-weight: 800; font-size: 52px; }
+.sub.emphasis.wm { font-size: 40px; }
+.deco { position: absolute; border-radius: 50%; opacity: .13; pointer-events: none; }
+.return { position: absolute; inset: 0; z-index: 99; }
+
+@keyframes sc0 {
+  0%   { opacity: 0; }
+  24%   { opacity: 1; }
+  79% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.scene-0 { background: #ffffff; animation: sc0 1.9s linear both; animation-delay: 0s; z-index: 0; }
+.scene-0 .accent { color: #ff6b35; }
+@keyframes ln0_0 {
+  0%   { opacity: 0; transform: translateY(28px); }
+  19% { opacity: 1; transform: translateY(0) scale(1); }
+  77% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.ln0_0 { animation: ln0_0 1.72s linear both; animation-delay: 0.18s; }
+@keyframes ln0_1 {
+  0%   { opacity: 0; transform: translateY(28px); }
+  24% { opacity: 1; transform: translateY(0) scale(1); }
+  70% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.ln0_1 { animation: ln0_1 1.3199999999999998s linear both; animation-delay: 0.5800000000000001s; }
+@keyframes ln0_2 {
+  0%   { opacity: 0; transform: translateY(28px); }
+  35% { opacity: 1; transform: translateY(0) scale(1); }
+  57% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.ln0_2 { animation: ln0_2 0.9199999999999999s linear both; animation-delay: 0.98s; }
+@keyframes ln0_3 {
+  0%   { opacity: 0; transform: translateY(28px); }
+  28% { opacity: 1; transform: translateY(0) scale(1); }
+  65% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.ln0_3 { animation: ln0_3 1.15s linear both; animation-delay: 0.75s; }
+@keyframes sc1 {
+  0%   { opacity: 0; }
+  21%   { opacity: 1; }
+  81% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.scene-1 { background: #e8f1fe; animation: sc1 2.1s linear both; animation-delay: 1.9s; z-index: 1; }
+.scene-1 .accent { color: #3d7eff; }
+@keyframes ln1_0 {
+  0%   { opacity: 0; transform: translateY(28px); }
+  17% { opacity: 1; transform: translateY(0) scale(1); }
+  79% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.ln1_0 { animation: ln1_0 1.9200000000000002s linear both; animation-delay: 2.08s; }
+@keyframes ln1_1 {
+  0%   { opacity: 0; transform: translateY(28px); }
+  21% { opacity: 1; transform: translateY(0) scale(1); }
+  74% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.ln1_1 { animation: ln1_1 1.52s linear both; animation-delay: 2.48s; }
+@keyframes ln1_2 {
+  0%   { opacity: 0; transform: translateY(28px); }
+  24% { opacity: 1; transform: translateY(0) scale(1); }
+  70% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.ln1_2 { animation: ln1_2 1.35s linear both; animation-delay: 2.65s; }
+@keyframes ln1_3 {
+  0%   { opacity: 0; transform: translateY(28px); }
+  33% { opacity: 1; transform: translateY(0) scale(1); }
+  59% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.ln1_3 { animation: ln1_3 0.9700000000000002s linear both; animation-delay: 3.03s; }
+@keyframes sc2 {
+  0%   { opacity: 0; }
+  21%   { opacity: 1; }
+  81% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.scene-2 { background: #e9f6ee; animation: sc2 2.1s linear both; animation-delay: 4s; z-index: 2; }
+.scene-2 .accent { color: #2fa36b; }
+@keyframes ln2_0 {
+  0%   { opacity: 0; transform: translateY(28px); }
+  17% { opacity: 1; transform: translateY(0) scale(1); }
+  79% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.ln2_0 { animation: ln2_0 1.9200000000000002s linear both; animation-delay: 4.18s; }
+@keyframes ln2_1 {
+  0%   { opacity: 0; transform: translateY(28px); }
+  21% { opacity: 1; transform: translateY(0) scale(1); }
+  74% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.ln2_1 { animation: ln2_1 1.52s linear both; animation-delay: 4.58s; }
+@keyframes ln2_2 {
+  0%   { opacity: 0; transform: translateY(28px); }
+  24% { opacity: 1; transform: translateY(0) scale(1); }
+  70% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.ln2_2 { animation: ln2_2 1.35s linear both; animation-delay: 4.75s; }
+@keyframes sc3 {
+  0%   { opacity: 0; }
+  21%   { opacity: 1; }
+  81% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.scene-3 { background: #fdf0e8; animation: sc3 2.1s linear both; animation-delay: 6.1s; z-index: 3; }
+.scene-3 .accent { color: #ff6b35; }
+@keyframes ln3_0 {
+  0%   { opacity: 0; transform: translateY(28px); }
+  17% { opacity: 1; transform: translateY(0) scale(1); }
+  79% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.ln3_0 { animation: ln3_0 1.9200000000000002s linear both; animation-delay: 6.279999999999999s; }
+@keyframes ln3_1 {
+  0%   { opacity: 0; transform: translateY(28px); }
+  24% { opacity: 1; transform: translateY(0) scale(1); }
+  70% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.ln3_1 { animation: ln3_1 1.35s linear both; animation-delay: 6.85s; }
+@keyframes ln3_2 {
+  0%   { opacity: 0; transform: translateY(28px); }
+  33% { opacity: 1; transform: translateY(0) scale(1); }
+  59% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.ln3_2 { animation: ln3_2 0.9700000000000002s linear both; animation-delay: 7.2299999999999995s; }
+@keyframes sc4 {
+  0%   { opacity: 0; }
+  23%   { opacity: 1; }
+  80% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.scene-4 { background: #f4effb; animation: sc4 2s linear both; animation-delay: 8.2s; z-index: 4; }
+.scene-4 .accent { color: #7b5bd6; }
+@keyframes ln4_0 {
+  0%   { opacity: 0; transform: translateY(28px); }
+  18% { opacity: 1; transform: translateY(0) scale(1); }
+  78% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.ln4_0 { animation: ln4_0 1.82s linear both; animation-delay: 8.379999999999999s; }
+@keyframes ln4_1 {
+  0%   { opacity: 0; transform: translateY(28px); }
+  23% { opacity: 1; transform: translateY(0) scale(1); }
+  72% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.ln4_1 { animation: ln4_1 1.42s linear both; animation-delay: 8.78s; }
+@keyframes ln4_2 {
+  0%   { opacity: 0; transform: translateY(28px); }
+  26% { opacity: 1; transform: translateY(0) scale(1); }
+  68% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.ln4_2 { animation: ln4_2 1.25s linear both; animation-delay: 8.95s; }
+@keyframes sc5 {
+  0%   { opacity: 0; }
+  24%   { opacity: 1; }
+  79% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.scene-5 { background: #ffffff; animation: sc5 1.9s linear both; animation-delay: 10.2s; z-index: 5; }
+.scene-5 .accent { color: #ff6b35; }
+@keyframes ln5_0 {
+  0%   { opacity: 0; transform: translateY(28px), scale(.88); }
+  19% { opacity: 1; transform: translateY(0) scale(1); }
+  77% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.ln5_0 { animation: ln5_0 1.72s linear both; animation-delay: 10.379999999999999s; }
+@keyframes ln5_1 {
+  0%   { opacity: 0; transform: translateY(28px), scale(.88); }
+  24% { opacity: 1; transform: translateY(0) scale(1); }
+  70% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.ln5_1 { animation: ln5_1 1.3199999999999998s linear both; animation-delay: 10.78s; }
+@keyframes ln5_2 {
+  0%   { opacity: 0; transform: translateY(28px), scale(.88); }
+  28% { opacity: 1; transform: translateY(0) scale(1); }
+  65% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.ln5_2 { animation: ln5_2 1.15s linear both; animation-delay: 10.95s; }
+@keyframes ln5_3 {
+  0%   { opacity: 0; transform: translateY(28px), scale(.88); }
+  42% { opacity: 1; transform: translateY(0) scale(1); }
+  48% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.ln5_3 { animation: ln5_3 0.77s linear both; animation-delay: 11.329999999999998s; }
+@keyframes ln5_4 {
+  0%   { opacity: 0; transform: translateY(28px), scale(.88); }
+  82% { opacity: 1; transform: translateY(0) scale(1); }
+  12% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.ln5_4 { animation: ln5_4 0.3899999999999999s linear both; animation-delay: 11.709999999999999s; }
+@keyframes ret {
+  0%, 73% { opacity: 0; }
+  100%    { opacity: 1; }
+}
+.return { background: #ffffff; animation: ret 1.5s linear both; animation-delay: 11s; z-index: 99; }
+</style></head>
+<body><div id="stage">
+<div class="scene scene-0">
+  <div class="deco" style="width:340px;height:340px;background:#ff6b35;top:-90px;right:-110px"></div>
+  <div class="deco" style="width:200px;height:200px;background:#ff6b35;bottom:70px;left:-60px"></div><div class="rows"><div class="big ln0_0">For years,</div><div class="big ln0_1">the terminal</div><div class="big ln0_2">scared me.</div><div class="sub ln0_3">Now it writes this post.</div></div></div><div class="scene scene-1">
+  <div class="deco" style="width:340px;height:340px;background:#3d7eff;top:-90px;right:-110px"></div>
+  <div class="deco" style="width:200px;height:200px;background:#3d7eff;bottom:70px;left:-60px"></div><div class="rows"><div class="big ln1_0">2025.</div><div class="big ln1_1">one goal.</div><div class="sub ln1_2">Learn the terminal anyway.</div><div class="sub ln1_3">Use AI safely.</div></div></div><div class="scene scene-2">
+  <div class="deco" style="width:340px;height:340px;background:#2fa36b;top:-90px;right:-110px"></div>
+  <div class="deco" style="width:200px;height:200px;background:#2fa36b;bottom:70px;left:-60px"></div><div class="rows"><div class="big accent ln2_0">678</div><div class="big wl ln2_1">contributions later.</div><div class="sub ln2_2">The fear was gone.</div></div></div><div class="scene scene-3">
+  <div class="deco" style="width:340px;height:340px;background:#ff6b35;top:-90px;right:-110px"></div>
+  <div class="deco" style="width:200px;height:200px;background:#ff6b35;bottom:70px;left:-60px"></div><div class="rows"><div class="big ln3_0">Two builds.</div><div class="sub ln3_1">Promptraise. BuzzzAgentic.</div><div class="sub wm ln3_2">Web3 visibility. Socials from Telegram.</div></div></div><div class="scene scene-4">
+  <div class="deco" style="width:340px;height:340px;background:#7b5bd6;top:-90px;right:-110px"></div>
+  <div class="deco" style="width:200px;height:200px;background:#7b5bd6;bottom:70px;left:-60px"></div><div class="rows"><div class="big accent ln4_0">This post?</div><div class="big wl ln4_1">Drafted by the stack.</div><div class="sub ln4_2">Gateway, agent, my approval.</div></div></div><div class="scene scene-5">
+  <div class="deco" style="width:340px;height:340px;background:#ff6b35;top:-90px;right:-110px"></div>
+  <div class="deco" style="width:200px;height:200px;background:#ff6b35;bottom:70px;left:-60px"></div><div class="rows"><div class="big wm ln5_0">The open person</div><div class="big ln5_1">company.</div><div class="sub ln5_2">One person. A real stack.</div><div class="sub emphasis ln5_3">Judgment stays human.</div><div class="sub wm ln5_4">What would you hand to an agent first?</div></div></div>
+<div class="return"></div>
+</div></body></html>
