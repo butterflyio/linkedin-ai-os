@@ -22,6 +22,10 @@
   .Community { background:#f4eef8; color:#6a3fd1; } .Expert { background:#fdf3e3; color:#b56b00; }
   .Index { background:#eef0f4; color:#5f636e; }
   .rec { background:#fdebed; color:#c0392b; border:1px solid #f5c6cb; border-radius:6px; font-size:11px; padding:1px 7px; margin-left:6px; }
+  .tags { margin-top:4px; display:flex; flex-wrap:wrap; gap:6px; }
+  .tag { display:inline-block; font-size:11px; font-weight:700; letter-spacing:.03em; border-radius:999px; padding:2px 10px; }
+  .legend { display:flex; flex-wrap:wrap; gap:8px; margin: 6px 0 14px; padding:10px 12px; background:#fff; border:1px solid #e3e6ec; border-radius:10px; }
+  .legend .tag { cursor:pointer; }
   a { color:#0f4c81; }
   .status { font-size:13px; color:#0e7a45; min-height:18px; }
   code { background:#eef0f4; padding:1px 6px; border-radius:5px; }
@@ -48,6 +52,23 @@
 <script>
 const FILE = "niche-review-2026-10-30.md";
 const RECS = ["R2","R4","R6","R7","R8","R14","R15"];
+// visual theme tags - color-coded so the approve/no-approve decision reflects
+// what subject you are actually buying into
+const TAGDEFS = [
+  { label: "Agent orchestration", color: "#efe9fb", text: "#6a3fd1", keys: ["swarm","orchestr","multi-agent","minecraft","government","sequential","workflow","team of agents","coordinat"] },
+  { label: "Coding agents", color: "#e2f3f7", text: "#0f8fa8", keys: ["coding agent","claude code","phpclaw","llama-server","forge","code agent","harness","verification harness"] },
+  { label: "Open models & hardware", color: "#fdf3e3", text: "#b56b00", keys: ["open weight","open source","hle","rtx","gpu","qwen","local llama","distill","zed","workstation"] },
+  { label: "Model releases", color: "#e8f1fe", text: "#0667d2", keys: ["gpt","openai","anthropic","opus","claude","bel","beta","astra","release","model spec"] },
+  { label: "Safety & alignment", color: "#fdebed", text: "#c0392b", keys: ["safety","alignment","control","rogue","oversight","govern","regulation","policy","scores","harm","human"] },
+  { label: "Enterprise trust", color: "#fdeee7", text: "#f05a22", keys: ["pentagon","bank","block","defense","military","institution","enterprise","secure" ] },
+  { label: "SEO · AEO · GEO · Web3", color: "#e7f5ec", text: "#0e7a45", keys: ["seo","aeo","geo","backlink","search console","ga4","semrush","ahrefs","web3","answer engine","generative engine"] },
+  { label: "Research & papers", color: "#edf1f4", text: "#546e78", keys: ["arxiv","paper","survey","analysis","field notes","report","study","evaluation","delta"] },
+  { label: "Tools & launches", color: "#f4effb", text: "#9c27b0", keys: ["show hn","launch","sdk","api","mcp","terminal","gui","canvas","dashboard","browser","open source","comment","event"] },
+];
+function tagsFor(t) {
+  const s = (t || "").toLowerCase();
+  return TAGDEFS.filter(d => d.keys.some(k => s.includes(k))).slice(0, 2);
+}
 let DATA = [];   // [{id,title,tier,url,notes}]
 let APPROVED = {};
 let srcName = FILE;
@@ -68,8 +89,13 @@ async function loadApprovals() {
   catch (e) {}
 }
 function render() {
+  const filter = document.body.dataset.filter || "";
+  const rows = filter ? DATA.filter(d => tagsFor(d.title).some(t => t.label === filter)) : DATA;
   const el = document.getElementById("list");
-  el.innerHTML = DATA.map(d => `
+  const notice = filter
+    ? `<p class="meta">Showing only: <b>${filter}</b> (${rows.length} rows) · <a href="javascript:document.body.dataset.filter='';render();">clear filter</a></p>`
+    : "";
+  el.innerHTML = notice + rows.map(d => `
     <div class="row">
       <input type="checkbox" data-id="${d.id}" ${APPROVED[d.id] ? "checked" : ""}>
       <div>
@@ -77,12 +103,32 @@ function render() {
           <span class="tier ${d.tier}">${d.tier}</span>
           ${RECS.includes(d.id) ? '<span class="rec">suggested</span>' : ""}
         </div>
+        ${tagsLayout(d)}
         <a href="${d.url}" target="_blank" rel="noopener">${d.url.replace("https://","")}</a>
       </div>
     </div>`).join("");
   document.querySelectorAll("#list input").forEach(cb => cb.addEventListener("change", () => {
     APPROVED[cb.dataset.id] = cb.checked; status("Edited - not saved yet");
   }));
+}
+function tagsLayout(d) {
+  const tags = tagsFor(d.title);
+  if (!tags.length) return "";
+  return `<div class="tags">${tags.map(t => `<span class="tag" style="background:${t.color};color:${t.text}">${t.label}</span>`).join("")}</div>`;
+}
+function renderLegend() {
+  const el = document.createElement("div");
+  el.className = "legend";
+  el.innerHTML = TAGDEFS.map(t => `<span class="tag" style="background:${t.color};color:${t.text}" data-tag="${t.label}">${t.label}</span>`).join("") + "<span style='color:#6b707b'>click a tag to filter</span>";
+  document.querySelector(".controls").after(el);
+  el.addEventListener("click", (e) => {
+    const tag = e.target.dataset && e.target.dataset.tag;
+    if (!tag) return;
+    const only = document.body.dataset.filter;
+    const next = only === tag ? "" : tag;
+    document.body.dataset.filter = next;
+    render();
+  });
 }
 function status(s) { document.getElementById("status").textContent = s; }
 const setAll = (v) => { DATA.forEach(d => APPROVED[d.id] = v); render(); status(v ? "All selected" : "Cleared - not saved"); };
@@ -105,7 +151,7 @@ document.getElementById("save").onclick = async () => {
     srcName = FILE;
     document.getElementById("src").textContent = "source: " + srcName;
     document.getElementById("fileLabel").textContent = "research/" + srcName;
-    render(); status(DATA.length + " rows · " + Object.values(APPROVED).filter(Boolean).length + " approved (saved copy)");
+    renderLegend(); render(); status(DATA.length + " rows · " + Object.values(APPROVED).filter(Boolean).length + " approved (saved copy)");
   } catch (e) {
     document.getElementById("list").innerHTML = "Couldn't load the review. Is the local server running? (tools/web.py)";
     document.getElementById("status").textContent = e.message;

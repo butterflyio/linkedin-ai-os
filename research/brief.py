@@ -314,6 +314,37 @@ def jina_search(query, key):
     return items
 
 
+def perplexity_verify(title, url, key):
+    """Second-layer source check: ask Perplexity sonar whether the headline/source
+    is credible and current. Returns (verdict, note, ok)."""
+    body = json.dumps({
+        "model": "sonar",
+        "messages": [
+            {"role": "system", "content": "You verify news/journalism sources. Answer in ONE compact JSON object with fields: credible (bool), current (bool), verdict (pick from VERIFIED, LIKELY, WEAK, UNVERIFIABLE), summary (<=12 words), reason (<=40 words). No extra text."},
+            {"role": "user", "content": f"Title: {title}\nURL: {url}\nThis is submitted for a 7-day niche-research brief. Is it a real, credible, recent thing to cite?"},
+        ],
+        "max_tokens": 220,
+    }).encode()
+    out = subprocess.run(["curl", "-sL", "-m", "40", "-X", "POST", "https://api.perplexity.ai/chat/completions",
+                          "-H", f"Authorization: Bearer {key}", "-H", "Content-Type: application/json", "-d", body],
+                         capture_output=True, text=True).stdout
+    try:
+        d = json.loads(out)
+        content = d["choices"][0]["message"]["content"]
+    except Exception:
+        return ("-", "perplexity call failed", False)
+    m = re.search(r"\{.*\}", content, re.S)
+    try:
+        j = json.loads(m.group(0)) if m else {}
+    except Exception:
+        j = {}
+    if not j:
+        return ("-", content[:120], True)
+    v = str(j.get("verdict", "LIKELY"))
+    why = str(j.get("reason", "") or "")[:90]
+    return (v, f"credible={j.get('credible')} current={j.get('current')} · {why}", True)
+
+
 def jina_read(url, key=None):
     """Jina Reader: any URL -> clean text (free; optional key lifts rate limits)."""
     h = ["-H", "Accept: application/json"] if False else (["-H", f"Authorization: Bearer {key}"] if key else [])
@@ -573,7 +604,35 @@ def main(argv):
     ap.add_argument("--out", help="output file path")
     ap.add_argument("--linkedin", action="store_true", help="LinkedIn-only scan (indexed posts + Jina body enrichment)")
     ap.add_argument("--linkedin-url", nargs="*", help="read ONE or more specific public linkedin.com/posts URLs (Jina reader, fallback ScrapeGraph)")
+    ap.add_argument("--verify", action="store_true", help="second layer: Perplexity re-verifies the approved rows in gate-approvals.json")
     args = ap.parse_args(argv)
+    if args.verify:
+        load_env()
+        key = os.environ.get("PERPLEXITY_API_KEY")
+        if not key:
+            print("Perplexity verification needs PERPLEXITY_API_KEY (research/setup-keys.sh)")
+            return 1
+        gp = os.path.join(ROOT, "research", "gate-approvals.json")
+        if not os.path.exists(gp):
+            print("No gate-approvals.json yet - approve rows in the gate UI first (research/gate.html).")
+            return 1
+        rows = json.load(open(gp)).get("rows", [])
+        if not rows:
+            print("gate-approvals.json is empty - no approved rows to verify.")
+            return 1
+        print(f"Verifying {len(rows)} approved rows with Perplexity sonar...")
+        out = [f"# Verified approved sources - {now_utc().strftime('%d/%m/%Y')}", "",
+               "| Row | Title | Verdict | Why | Link |", "|---|---|---|---|---|"]
+        for r in rows:
+            verdict, why, ok = perplexity_verify(r.get("title", ""), r.get("url", ""), key)
+            if not ok:
+                print("  warn:", why)
+            out.append(f"| {r.get('id','?')} | {r.get('title','')[:52]} | {verdict} | {why} | {r.get('url','')} |")
+        out += ["", "Coverage: Perplexity sonar second-layer check on every approved row; treat WEAK/UNVERIFIABLE as 'hold before post-writer'."]
+        target = args.out or os.path.join(ROOT, "research", f"verified-approved-{now_utc().strftime('%Y-%m-%d')}.md")
+        Path(target).write_text("\n".join(out))
+        print("wrote", target)
+        return 0
     if args.linkedin_url:
         load_env()
         jk = os.environ.get("JINA_API_KEY")
