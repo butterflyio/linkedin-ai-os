@@ -89,6 +89,24 @@ Requires ffmpeg for GIF encoding.
 Existing DSLs: scratch/incident-infographic.dsl.txt (stats sequence),
 scratch/open-person-infographic.dsl.txt (founder journey).
 
+## Editor (edit an infographic visually)
+
+Open `tools/editor.html` in a browser - no server needed. Load a spec JSON
+(`flow` mode is first-class), edit text, colours, steps and chips, scrub the
+preview timeline, then export the updated JSON and re-render:
+
+    node scratch/render-story.mjs edited-flow.json out.gif --poster out.png
+
+## Niche research
+
+`research/` holds dated 7-day niche briefs (Reddit archive + HN + official
+feeds). X/Twitter and Google search are noted when unavailable.
+
+Charlie Hills' public skills live at github.com/charlie947/social-media-skills
+(post-* , niche-research, gemini-*, graphic-designer, analytics-dashboard,
+content-matrix, profile-optimizer, voice-builder) - a reference for skill
+authorship; this repo ships its own pipeline for the same jobs.
+
 ## Install (portable)
 
 These are plain markdown skills and one python script. They work in Claude

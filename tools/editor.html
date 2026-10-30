@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Infographic Editor - LinkedIn AI OS</title>
+<style>
+  :root { --line:#2b2f38; --muted:#6b707b; --bg:#f5f6f8; --card:#fff; --accent:#0e7a45; }
+  * { box-sizing: border-box; }
+  body { margin:0; font: 14px/1.45 -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--line); }
+  header { display:flex; align-items:center; gap:12px; padding:12px 18px; background:#fff; border-bottom:1px solid #e3e6ec; position:sticky; top:0; z-index:5; }
+  header h1 { font-size:16px; margin:0; font-weight:800; }
+  header .mode { font-size:12px; font-weight:700; letter-spacing:.12em; color:var(--accent); text-transform:uppercase; }
+  header .spacer { flex:1; }
+  button { font:inherit; border:1px solid #cfd4dd; background:#fff; border-radius:8px; padding:6px 12px; cursor:pointer; }
+  button:hover { border-color:var(--accent); }
+  button.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+  .wrap { display:grid; grid-template-columns: minmax(380px, 540px) 1fr; gap:18px; padding:18px; }
+  .panel { background:var(--card); border:1px solid #e3e6ec; border-radius:12px; padding:14px; }
+  .panel h2 { font-size:12px; text-transform:uppercase; letter-spacing:.14em; color:var(--muted); margin:0 0 10px; }
+  .stage-wrap { display:flex; justify-content:center; overflow:hidden; background:repeating-linear-gradient(45deg,#efeff2,#efeff2 12px,#e7e8eb 12px,#e7e8eb 24px); border-radius:10px; }
+  #stage { transform-origin: top left; }
+  .scrub { display:flex; align-items:center; gap:10px; margin-top:12px; }
+  .scrub input { flex:1; }
+  .field { display:flex; flex-direction:column; gap:4px; margin-bottom:10px; }
+  .field label { font-size:12px; font-weight:600; color:var(--muted); }
+  .field input[type=text], .field input[type=number], .field select { font:inherit; padding:6px 8px; border:1px solid #cfd4dd; border-radius:7px; }
+  .field input[type=color] { width:44px; height:30px; padding:2px; border:1px solid #cfd4dd; border-radius:6px; }
+  .cols { display:flex; gap:10px; } .cols > .field { flex:1; }
+  .step-card { border:1px solid #e3e6ec; border-radius:10px; padding:10px; margin-bottom:10px; background:#fafbfc; }
+  .step-card .head { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-weight:700; }
+  .step-card .head small { color:var(--muted); font-weight:600; }
+  .chip-row { display:flex; gap:6px; align-items:center; margin:4px 0; }
+  .chip-row input[type=text] { flex:1; }
+  .chip-row select { width:112px; }
+  details { border-top:1px solid #eef0f4; padding-top:8px; margin-top:8px; }
+  summary { cursor:pointer; font-weight:700; font-size:13px; }
+  .hint { font-size:12px; color:var(--muted); }
+  pre { background:#17181c; color:#e8eaf0; padding:10px; border-radius:8px; font-size:12px; overflow:auto; white-space:pre-wrap; }
+  code { background:#eef0f4; padding:1px 5px; border-radius:5px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Infographic Editor</h1>
+  <span class="mode" id="modeLabel">flow</span>
+  <span class="spacer"></span>
+  <label class="hint" style="display:flex;gap:6px;align-items:center">Open<input type="file" id="fileIn" accept=".json"></label>
+  <button id="exportBtn" class="primary">Export JSON</button>
+  <button id="rebuildBtn">Rebuild</button>
+</header>
+<div class="wrap">
+  <div class="panel">
+    <h2>Preview</h2>
+    <div class="stage-wrap"><div id="stage"></div></div>
+    <div class="scrub">
+      <span id="tLabel" class="hint">0.0s</span>
+      <input type="range" id="scrub" min="0" max="1200" step="10" value="0">
+      <span class="hint" id="durLabel">12s</span>
+    </div>
+    <p class="hint" id="cliHint"></p>
+  </div>
+  <div class="panel">
+    <h2>Edit</h2>
+    <div id="form"></div>
+  </div>
+</div>
+<script>
+"use strict";
+// ── state ──────────────────────────────────────────────────────────────────
+let spec = null;
+let mode = "flow";
+const DEFAULTS = {
+  flow: { mode:"flow", size:[1080,1350], fps:15, duration:12, kicker:"One founder. One stack.",
+    kickerAccent:"#f05a22", byline:"Zain Khan · building in public", title:["The open person","company."],
+    stepStart:0.7, stepStep:0.3, sweepStart:2.2, payoffAt:7.0, footerTimes:[7.7,8.0],
+    footerLeft:"post → gate → gif → buffer", footerRight:"one person. one stack.",
+    steps:[
+      {num:"01",badge:"SETUP",icon:"✎",title:"Write the hook",sub:"Story bank first.",accent:"#0667d2",tint:"#ebf4fe",chips:[{text:"voice.md",dot:"#0667d2"},{text:"story bank",dot:"#7b5bd6"},{text:"no em dashes",dashed:true}]},
+      {num:"02",badge:"DRAFT",icon:"⚡",title:"The agent drafts in voice",sub:"Real facts only.",accent:"#6a3fd1",tint:"#f0edfc",chips:[{text:"hook < 55 chars",tick:true},{text:"678 contributions",tick:true}]},
+      {num:"03",badge:"GATE",icon:"✓",title:"Caption gate, all checks",sub:"Banned words, hedges, dashes.",accent:"#f05a22",tint:"#fdebe3",chips:[{text:"hook ✓",tick:true},{text:"all passed",pill:true}]},
+      {num:"04",badge:"RENDER",icon:"▣",title:"Infographic renders inline",sub:"Same frame the whole loop.",accent:"#0f8fa8",tint:"#e2f3f7",chips:[{text:"1080 × 1350",dot:"#0f8fa8"},{text:"12 s loop",dot:"#0f8fa8"}]},
+      {num:"05",badge:"REVIEW",icon:"☑",title:"Buffer draft, my approval",sub:"Nothing posts until I read it.",accent:"#b56b00",tint:"#fbf2df",chips:[{text:"pending review",dot:"#b56b00"},{text:"my approval",dot:"#b56b00"}]},
+      {num:"06",badge:"PUBLISH",icon:"⟳",title:"Schedule from the queue",sub:"The stack ships it. I own it.",accent:"#0e7a45",tint:"#e7f6ec",chips:[{text:"next-gen auto-post",toggle:false},{text:"legacy manual",toggle:true}]}
+    ] }
+};
+
+// ── flow preview builder (mirrors scratch/render-story.mjs flow mode) ──────
+const FLOW = {
+  CARD_TOP:296, CARD_H:150, CARD_GAP:18, CARD_LEFT:96, CARD_W:884,
+  draw(s) {
+    const W=1080, H=1350;
+    const ST=s.steps||[];
+    let css = `.flow{width:${W}px;height:${H}px;position:relative;background:#f2f3f5;background-image:linear-gradient(rgba(213,217,226,.6) 1px,transparent 1px),linear-gradient(90deg,rgba(213,217,226,.6) 1px,transparent 1px);background-size:34px 34px;overflow:hidden;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}`;
+    css += `.fh{margin:44px 0 0 96px;text-align:left}.k{font-size:27px;font-weight:700;letter-spacing:.26em;text-transform:uppercase;color:${s.kickerAccent||"#f05a22"}}`;
+    css += `.ti{display:flex;flex-direction:column;font-size:68px;font-weight:900;color:${s.ink||"#17181c"};line-height:1.05;letter-spacing:-.03em;margin-top:10px}`;
+    css += `.bl{display:flex;gap:12px;margin-top:14px;font-size:22px;font-weight:600;color:${s.inkSoft||"#3f444e"}}.av{width:34px;height:34px;border-radius:50%;background:${s.kickerAccent||"#f05a22"};color:#fff;font-weight:800;font-size:17px;display:flex;align-items:center;justify-content:center}`;
+    css += `.sc{position:absolute;left:${this.CARD_LEFT}px;width:${this.CARD_W}px;height:${this.CARD_H}px;border-radius:18px;display:flex;align-items:center;gap:20px;padding:14px 20px;box-sizing:border-box}`;
+    css += `.il{width:76px;height:76px;border-radius:16px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:34px;flex:none;box-shadow:0 4px 14px rgba(24,30,60,.07)}`;
+    css += `.col{position:relative;flex:1;min-width:0}.bdg{position:absolute;right:2px;top:0;background:#fff;border:1px solid;border-radius:999px;padding:3px 12px;font-size:13.5px;font-weight:800;letter-spacing:.16em;text-transform:uppercase}`;
+    css += `.st{font-size:30px;font-weight:800;color:${s.ink||"#17181c"};margin-top:2px;letter-spacing:-.01em}.ss{font-size:19px;font-weight:500;color:${s.inkSoft||"#3f444e"};margin-top:1px}`;
+    css += `.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:7px;align-items:center}.chip{display:inline-flex;align-items:center;gap:7px;background:#fff;border:1px solid #e3e6ec;border-radius:999px;padding:4px 12px;font-size:17px;font-weight:600;color:#17181c;white-space:nowrap;opacity:1}`;
+    css += `.cdas{border:1.5px dashed #b9bdc7;background:transparent;color:${s.inkSoft||"#666"}}.cpill{background:#e7f5ec;border-color:#bfe6cf;color:#0e7a45;font-weight:700}.cok{color:#0e7a45;font-weight:900;font-size:15px}.cdot{width:9px;height:9px;border-radius:50%;flex:none}`;
+    css += `.ctog{display:inline-flex;align-items:center;gap:10px;white-space:nowrap}.trk{display:block;width:46px;height:26px;border-radius:999px;background:#c9cedb;border:1px solid #b3b9c8;position:relative;flex:none;box-sizing:border-box}.ckn{position:absolute;left:3px;top:2px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 5px rgba(20,26,40,.32)}.ctxt{font-size:17px;font-weight:700;color:#17181c}`;
+    css += `.rail{position:absolute;inset:0;pointer-events:none}.rline{position:absolute;left:46px;width:2px;background:#d6d9e1}.rdot{position:absolute;left:28px;width:36px;height:36px;border-radius:50%;background:#fff;border:1.5px solid #d6d9e1;color:#5f636e;font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center}`;
+    css += `.fb{position:absolute;left:0;right:0;bottom:24px;display:flex;justify-content:space-between;padding:0 96px;font-size:19px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:${s.inkSoft||"#3f444e"}}`;
+    css += `.dd{position:absolute;width:460px;height:460px;border-radius:50%;background:radial-gradient(circle,rgba(212,198,236,.38) 0%,transparent 62%);left:-110px;bottom:-90px;pointer-events:none}`;
+
+    // animation keyframes (seeded for the scrubber - delays are absolute seconds)
+    const kb = [];
+    const steps = ST.map((st,i)=>Object.assign({t:(i==null)?0:0}, st));
+    const key = (nm, fr, to, dt) => `@keyframes ${nm}{from{${fr}}to{${to}}}`;
+    const kf = [];
+    // entrance: fade+rise .42s, one-shot
+    ST.forEach((st,i)=>{
+      const t = (s.stepStart||0.7) + i*(s.stepStep||0.3);
+      kf.push(key(`in${i}`,`opacity:0;transform:translateY(16px)`,`opacity:1;transform:none`,t));
+      kf.push(`.sc${i}{top:${this.CARD_TOP + i*(this.CARD_H+this.CARD_GAP)}px;left:${this.CARD_LEFT}px;background:${st.tint};border:1.5px solid ${st.accent}${"59"};animation:in${i} .42s cubic-bezier(.2,.7,.3,1.2) both;animation-delay:${t}s}`);
+    });
+    // highlight sweep: one-shot glow at sweepStart + second pass
+    ST.forEach((st,i)=>{
+      const a = ((s.sweepStart||2.2) + i*0.36).toFixed(2);
+      const b = ((s.sweepStart||2.2) + 3.0 + i*0.36).toFixed(2);
+      kf.push(key(`hl${i}`,`box-shadow:0 0 0 2px transparent`,`box-shadow:0 0 0 4px ${st.accent}`,a)); // (3-stop simplified)
+      kf.push(`.sc${i}.glow{animation:hl${i} .55s ease-in-out ${a}s 1 both}`); // simplified - scrub server will use full
+    });
+    const animCss = kf.join("\n");
+    const cssFull = css + "\n" + animCss;
+
+    const stepsHtml = ST.map((st,i)=>{
+      const y = this.CARD_TOP + i*(this.CARD_H+this.CARD_GAP);
+      const chips = (st.chips||[]).map((ch,ci)=>{
+        if(ch.toggle!==undefined){
+          const knob = ch.toggle ? "transform:translateX(20px)" : "";
+          return `<span class="ctog"><span class="trk" style="background:${ch.toggle?st.accent:'#c9cedb'};border-color:${ch.toggle?st.accent:'#b3b9c8'}"><span class="ckn" style="${knob}"></span></span><span class="ctxt">${ch.text}</span></span>`;
+        }
+        return `<span class="chip${ch.dashed?' cdas':''}${ch.pill?' cpill':''}">${ch.tick?'<span class="cok">✓</span>':ch.dot?`<span class="cdot" style="background:${ch.dot}"></span>`:''}${ch.text}</span>`;
+      }).join("");
+      return `<div class="sc sc${i}" style="top:${y}px">` +
+        `<div class="il" style="color:${st.accent};border:1px solid ${st.accent}33">${st.icon||''}</div>` +
+        `<div class="col"><div class="bdg" style="color:${st.accent}">${st.num||''} · ${st.badge}</div>` +
+        `<div class="st">${st.title}</div><div class="ss">${st.sub||''}</div><div class="chips">${chips}</div></div></div>`;
+    }).join("");
+
+    const dots = ST.map((st,i)=>{ const cy=this.CARD_TOP + i*(this.CARD_H+this.CARD_GAP)+this.CARD_H/2; return `<div class="rdot" style="top:${cy-18}px">${String(i+1).padStart(2,'0')}</div>`; }).join("");
+    const topRail = this.CARD_TOP + this.CARD_H/2;
+    const botRail = this.CARD_TOP + (ST.length-1)*(this.CARD_H+this.CARD_GAP) + this.CARD_H/2;
+
+    const html = `<div class="flow">
+      <div class="fh"><div class="k">${s.kicker}</div><div class="ti"><span>${s.title[0]}</span><span>${s.title[1]||''}</span></div>
+      <div class="bl"><div class="av">Z</div>${s.byline||''}</div></div>
+      ${stepsHtml}
+      <div class="rail"><div class="rline" style="top:${topRail}px;height:${botRail-topRail}px"></div>${dots}</div>
+      <div class="fb"><span>${s.footerLeft||''}</span><span>${s.footerRight||''}</span></div>
+      <div class="dd"></div>
+    </div>`;
+    return { css: cssFull, html };
+  }
+};
+
+// ── preview wiring ─────────────────────────────────────────────────────────
+const stage = document.getElementById("stage");
+const formEl = document.getElementById("form");
+const scrub = document.getElementById("scrub");
+const tLabel = document.getElementById("tLabel");
+let recordSec = 0;
+
+function renderPreview(){
+  if(!spec) return;
+  stage.innerHTML = "";
+  if(mode !== "flow") { stage.innerHTML = `<div style="padding:40px;color:#6b707b">Editor preview supports flow mode here. Other modes: edit JSON + re-render via CLI.</div>`; return; }
+  const { css, html } = FLOW.draw(spec);
+  let sheet = document.getElementById("animCss");
+  if(!sheet){ sheet = document.createElement("style"); sheet.id="animCss"; document.head.appendChild(sheet); }
+  sheet.textContent = css;
+  stage.innerHTML = html;
+  stage.style.width = "540px"; stage.style.height = "675px"; stage.style.transform = "scale(0.5)";
+  scrub.max = Math.max(100, Math.round((spec.duration||12)*100));
+  document.getElementById("durLabel").textContent = (spec.duration||12) + "s";
+  seek(recordSec);
+}
+function seek(sec){
+  recordSec = sec;
+  tLabel.textContent = sec.toFixed(1) + "s";
+  const anims = document.getAnimations();
+  for(const a of anims){
+    if(a.effect && a.effect.getTiming){
+      try { a.pause(); const delay = (a.effect.getTiming().delay||0)/1000; a.currentTime = Math.max(0, sec*1000 - (a.effect.getTiming().delay||0)); } catch(e){}
+    }
+  }
+}
+scrub.addEventListener("input", ()=> seek(parseFloat(scrub.value)/100));
+
+// ── form (flow mode) ───────────────────────────────────────────────────────
+function field(id, label, value, type="text", extra="") {
+  return `<div class="field"><label for="${id}">${label}</label><input type="${type}" id="${id}" value="${(value ?? "").toString().replace(/"/g,'&quot;')}" ${extra}></div>`;
+}
+function renderForm(){
+  formEl.innerHTML = "";
+  if(!spec) { formEl.innerHTML = "<p class='hint'>Load a JSON spec to edit. Works best with a <code>flow</code> spec.</p>"; return; }
+  const s = spec;
+  const el = (id)=>document.getElementById(id);
+  formEl.innerHTML = `
+  <details open><summary>Header</summary>
+    ${field("kicker","Kicker",s.kicker)}
+    ${field("t0","Title line 1",s.title[0])}
+    ${field("t1","Title line 2",s.title[1])}
+    ${field("byline","Byline",s.byline)}
+    <div class="cols">${field("ka","Kicker colour",s.kickerAccent,"color")}${field("ink","Ink",s.ink,"color")}${field("soft","Body grey",s.inkSoft,"color")}</div>
+  </details>
+  <details open><summary>Timing (seconds)</summary>
+    <div class="cols">${field("dur","Duration",s.duration,"number")}${field("stSt","Steps start",s.stepStart,"number","step='0.1'")}${field("stSp","Step gap",s.stepStep,"number","step='0.1'")}</div>
+    <div class="cols">${field("sw","Sweep start",s.sweepStart,"number","step='0.1'")}${field("pay","Payoff at",s.payoffAt,"number","step='0.1'")}</div>
+    <div class="cols">${field("ft0","Footer f1",s.footerTimes[0],"number","step='0.1'")}${field("ft1","Footer f2",s.footerTimes[1],"number","step='0.1'")}</div>
+    ${field("fl","Footer left",s.footerLeft)}
+    ${field("fr","Footer right",s.footerRight)}
+  </details>
+  <details open><summary>Steps (${(s.steps||[]).length})</summary><div id="stepsBox"></div></details>` +
+  `<button id="addStep" type="button">+ Add step</button>`;
+  document.getElementById("stepsBox").innerHTML = (s.steps||[]).map((st,i)=>stepHTML(s,st,i)).join("");
+  el("addStep").onclick = ()=> { s.steps.push({num:"0"+(s.steps.length+1),badge:"STEP",icon:"✓",title:"New step",sub:"",accent:"#0667d2",tint:"#ebf4fe",chips:[{text:"chip",tick:true}]}); renderForm(); renderPreview(); };
+  // bind
+  const bind = (id, path, fn)=>{ const e=el(id); if(e) e.addEventListener("input", ()=>{ fn ? fn(e) : setPath(s, path, e.type==="number"? parseFloat(e.value) : e.value); renderPreview(); }); };
+  bind("kicker","kicker"); bind("t0","title.0"); bind("t1","title.1"); bind("byline","byline");
+  bind("ka","kickerAccent"); bind("ink","ink"); bind("soft","inkSoft");
+  bind("dur","duration"); bind("stSt","stepStart"); bind("stSp","stepStep"); bind("sw","sweepStart"); bind("pay","payoffAt");
+  bind("ft0","footerTimes.0"); bind("ft1","footerTimes.1"); bind("fl","footerLeft"); bind("fr","footerRight");
+}
+function stepHTML(s, st, i){
+  return `<div class="step-card">
+    <div class="head"><span>${st.badge}</span><small>${st.num}</small><button type="button" data-rm="${i}">✕</button></div>
+    <div class="cols">${field("n_"+i,"#",st.num,"text")}${field(( "b_"+i),"Badge",st.badge)}${field(("i_"+i),"Icon",st.icon)}</div>
+    ${field(("t_"+i),"Title",st.title)}
+    ${field(("s_"+i),"Sub",st.sub)}
+    <div class="cols">${field(("a_"+i),"Accent",st.accent,"color")}${field(("tn_"+i),"Tint",st.tint,"color")}</div>
+    <div class="chips-ed">
+      ${(st.chips||[]).map((ch,ci)=>chipHTML(i,ci,ch)).join("")}
+    </div>
+    <button type="button" data-addchip="${i}">+ chip</button>
+  </div>`;
+}
+function chipHTML(i, ci, ch){
+  const kind = ch.toggle!==undefined ? "toggle" : ch.pill ? "pill" : ch.tick ? "tick" : ch.dashed ? "dashed" : ch.dot ? "dot" : "text";
+  return `<div class="chip-row">
+    <input type="text" data-chiptext="${i}.${ci}" value="${ch.text||""}">
+    <select data-chipkind="${i}.${ci}">${["text","dot","tick","pill","dashed","toggle"].map(k=>`<option ${k===kind?"selected":""}>${k}</option>`).join("")}</select>
+    <input type="color" data-chipcol="${i}.${ci}" value="${ch.dot||ch.tick?(ch.tick?"#0e7a45":"#0667d2"):"#0667d2"}" title="colour (dots)"><span></span>
+    <input type="checkbox" data-chiptgl="${i}.${ci}" ${ch.toggle?"checked":""} title="toggle on"><span></span>
+    <button type="button" data-rmchip="${i}.${ci}">✕</button>
+  </div>`;
+}
+function setPath(obj, path, val){ let p=obj; const parts=String(path).split("."); for(let i=0;i<parts.length-1;i++) p=p[parts[i]]; p[parts[parts.length-1]]=val; }
+
+// event delegation for step/chip edits
+formEl.addEventListener("input", (e)=>{
+  const t=e.target;
+  if(t.dataset.chiptext){ const [i,ci]=t.dataset.chiptext.split(".").map(Number); spec.steps[i].chips[ci].text=t.value; renderPreview(); }
+  else if(t.dataset.chipcol){ const [i,ci]=t.dataset.chipcol.split(".").map(Number); const ch=spec.steps[i].chips[ci]; ch.dot=t.value; if(!ch.tick&&!ch.pill&&!ch.toggle&&!ch.dashed) ch.dot=t.value; renderPreview(); }
+  else if(t.dataset.chiptgl){ const [i,ci]=t.dataset.chiptgl.split(".").map(Number); spec.steps[i].chips[ci].toggle=t.checked; renderPreview(); }
+});
+formEl.addEventListener("change", (e)=>{
+  const t=e.target;
+  if(t.dataset.chipkind){ const [i,ci]=t.dataset.chipkind.split(".").map(Number); const ch=spec.steps[i].chips[ci];
+    ["dot","tick","pill","dashed"].forEach(k=>delete ch[k]); delete ch.toggle;
+    const k=t.value; if(k==="dot") ch.dot="#0667d2"; if(k==="tick") ch.tick=true; if(k==="pill") ch.pill=true; if(k==="dashed") ch.dashed=true; if(k==="toggle") ch.toggle=false;
+    renderForm(); renderPreview(); }
+});
+formEl.addEventListener("click", (e)=>{
+  const t=e.target;
+  if(t.dataset && t.dataset.rm){ spec.steps.splice(Number(t.dataset.rm),1); renderForm(); renderPreview(); }
+  else if(t.dataset && t.dataset.addchip!=null){ spec.steps[Number(t.dataset.addchip)].chips.push({text:"new chip"}); renderForm(); renderPreview(); }
+  else if(t.dataset && t.dataset.rmchip){ const [i,ci]=t.dataset.rmchip.split(".").map(Number); spec.steps[i].chips.splice(ci,1); renderForm(); renderPreview(); }
+});
+
+// n→ai fields in steps form
+function bindStepFields(){
+  document.querySelectorAll("#form input[type=text]").forEach(inp=>{});
+}
+
+// ── load / export ──────────────────────────────────────────────────────────
+document.getElementById("fileIn").addEventListener("change", async (ev)=>{
+  const f = ev.target.files[0]; if(!f) return;
+  loadSpec(await f.text());
+});
+async function loadSpec(text){
+  try { spec = JSON.parse(text); } catch(e){ alert("Invalid JSON: "+e.message); return; }
+  mode = spec.mode || "flow";
+  document.getElementById("modeLabel").textContent = mode;
+  renderForm(); renderPreview();
+  document.getElementById("cliHint").textContent = "Rendered from: "+ (spec._file || "loaded spec");
+}
+document.getElementById("rebuildBtn").onclick = ()=>renderPreview();
+document.getElementById("exportBtn").onclick = ()=>{
+  if(!spec) return;
+  const s = JSON.parse(JSON.stringify(spec)); delete s._file;
+  const blob = new Blob([JSON.stringify(s, null, 2)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = "edited-"+(mode||"spec")+".json"; a.click();
+  document.getElementById("cliHint").textContent = "Exported. Render with:  node scratch/render-story.mjs edited-"+ (mode||"spec") +".json scratch/"+(mode||"spec")+".gif --poster out.png";
+};
+
+// bootstrap with a default flow spec
+window.__editor = { getSpec:()=>spec };
+(async function init(){
+  // try to preload the existing flow spec via fetch
+  try { const r = await fetch("../scratch/open-person-flow.json"); if(r.ok){ loadSpec(await r.text()); return; } } catch(e){}
+  loadSpec(JSON.stringify(DEFAULTS.flow));
+})();
+</script>
+</body>
+</html>
