@@ -22,6 +22,9 @@
   .Community { background:#f4eef8; color:#6a3fd1; } .Expert { background:#fdf3e3; color:#b56b00; }
   .Index { background:#eef0f4; color:#5f636e; }
   .rec { background:#fdebed; color:#c0392b; border:1px solid #f5c6cb; border-radius:6px; font-size:11px; padding:1px 7px; margin-left:6px; }
+  .via { font-size:11px; color:#6b707b; margin-top:4px; } .via b { color:#0f4c81; }
+  .sum { font-size:11px; margin-top:6px; padding:3px 11px; border-radius:8px; }
+  .sumtext { font-size:13px; color:#2b2f38; background:#f7f8fa; border:1px solid #eef0f4; border-radius:8px; padding:8px 10px; margin-top:6px; white-space:pre-wrap; }
   .tags { margin-top:4px; display:flex; flex-wrap:wrap; gap:6px; }
   .tag { display:inline-block; font-size:11px; font-weight:700; letter-spacing:.03em; border-radius:999px; padding:2px 10px; }
   .legend { display:flex; flex-wrap:wrap; gap:8px; margin: 6px 0 14px; padding:10px 12px; background:#fff; border:1px solid #e3e6ec; border-radius:10px; }
@@ -77,10 +80,10 @@ async function loadReview() {
   const r = await fetch(FILE); if (!r.ok) throw new Error("can't fetch " + FILE);
   const txt = await r.text();
   const rows = [];
-  const re = /^- \[ \] (R\d+)\s*\|\s*([^|]{1,90})\s*\|\s*([^|]{3,20})\s*\|\s*(\S+)/gm;
+  const re = /^- \[ \] (R\d+)\s*\|\s*([^|]{1,90})\s*\|\s*([^|]{3,20})\s*\|\s*(\S+)(?:\s*\|\s*via:\s*([^|]+))?/gm;
   let m;
   while ((m = re.exec(txt)) !== null) {
-    rows.push({ id: m[1], title: m[2].trim(), tier: m[3].trim(), url: m[4].trim() });
+    rows.push({ id: m[1], title: m[2].trim(), tier: m[3].trim(), url: m[4].trim(), via: (m[5] || "").trim() });
   }
   return rows;
 }
@@ -104,11 +107,29 @@ function render() {
           ${RECS.includes(d.id) ? '<span class="rec">suggested</span>' : ""}
         </div>
         ${tagsLayout(d)}
+        ${d.via ? `<div class="via">also surfaced on: <b>${d.via}</b></div>` : ""}
         <a href="${d.url}" target="_blank" rel="noopener">${d.url.replace("https://","")}</a>
+        <div><button class="sum" data-id="${d.id}">read summary</button></div>
+        <div class="sumtext" id="sum_${d.id}" hidden></div>
       </div>
     </div>`).join("");
   document.querySelectorAll("#list input").forEach(cb => cb.addEventListener("change", () => {
     APPROVED[cb.dataset.id] = cb.checked; status("Edited - not saved yet");
+  }));
+  document.querySelectorAll("#list .sum").forEach(btn => btn.addEventListener("click", async () => {
+    const d = DATA.find(x => x.id === btn.dataset.id);
+    const box = document.getElementById("sum_" + d.id);
+    if (box.hidden === false) { box.hidden = true; return; }
+    if (d._summary) { box.textContent = d._summary; box.hidden = false; return; }
+    btn.textContent = "loading…";
+    try {
+      const r = await fetch("/api/summarize", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ title: d.title, url: d.url }) });
+      const j = await r.json();
+      d._summary = (j.summary || "(no summary)") + (j.key_points && j.key_points.length ? "\n\n• " + j.key_points.join("\n• ") : "") + (j.relevance ? "\n\nWhy it matters: " + j.relevance : "");
+      box.textContent = d._summary; box.hidden = false; btn.textContent = "read summary";
+    } catch (e) {
+      box.textContent = "summary unavailable: " + e.message; box.hidden = false; btn.textContent = "read summary";
+    }
   }));
 }
 function tagsLayout(d) {

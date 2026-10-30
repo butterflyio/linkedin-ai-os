@@ -49,8 +49,26 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             return
         return super().do_GET()
 
+    def _read_key(self, name):
+        p = os.path.join(ROOT, "research", ".env")
+        try:
+            for line in open(p):
+                if line.startswith(name + "="):
+                    return line.split("=", 1)[1].strip().strip('"').strip("'")
+        except Exception:
+            pass
+        return os.environ.get(name, "")
+
+    def _json(self, code, obj):
+        body = json.dumps(obj).encode()
+        self.send_response(code)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
     def do_POST(self):
-        if self.path != "/api/save":
+        if self.path not in ("/api/save", "/api/summarize"):
             self.send_error(404)
             return
         try:
@@ -59,12 +77,45 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         except Exception:
             self.send_error(400, "bad json")
             return
-        with open(os.path.join(SAVE_DIR, FILE), "w") as f:
-            json.dump(payload, f, indent=2)
-        self.send_response(200)
-        self.send_header("Content-Type", "application/json")
-        self.end_headers()
-        self.wfile.write(b'{"ok": true}')
+        if self.path == "/api/save":
+            with open(os.path.join(SAVE_DIR, FILE), "w") as f:
+                json.dump(payload, f, indent=2)
+            self._json(200, {"ok": True})
+            return
+        # /api/summarize - Perplexity on-demand summary for one row
+        key = self._read_key("PERPLEXITY_API_KEY")
+        if not key:
+            self._json(400, {"error": "PERPLEXITY_API_KEY not set in research/.env"})
+            return
+        import subprocess
+        import re as _re
+        title = str(payload.get("title", ""))
+        url = str(payload.get("url", ""))
+        body = json.dumps({
+            "model": "perplexity/sonar",
+            "input": [
+                {"role": "system", "content": [{"type": "input_text", "text": "Summarise this news item for a Linkedin creator (AI agents, Web3 search visibility, AI safety). Reply with ONE JSON object only: {\"summary\": \"2-4 sentences\", \"key_points\": [\"…\", \"…\"], \"relevance\": \"one short founder-relevant reason\"}. If the URL looks unreliable or unreachable, say so plainly inside summary."}]},
+                {"role": "user", "content": [{"type": "input_text", "text": f"Title: {title}\nURL: {url}"}]},
+            ],
+            "max_output_tokens": 420,
+        }).encode()
+        out = subprocess.run(["curl", "-sL", "-m", "60", "-X", "POST", "https://api.perplexity.ai/v1/responses",
+                              "-H", f"Authorization: Bearer {key}", "-H", "Content-Type: application/json", "-d", body],
+                             capture_output=True, text=True).stdout
+        try:
+            d = json.loads(out)
+            ot = d.get("output") or d.get("output_text") or []
+            if isinstance(ot, str):
+                content = ot
+            else:
+                content = "".join(c.get("text", "") for m in ot for c in (m.get("content") or []) if c.get("type") == "output_text")
+            m = _re.search(r"\{.*\}", content, _re.S)
+            parsed = json.loads(m.group(0)) if m else {}
+            if not parsed:
+                parsed = {"summary": content[:600]}
+            self._json(200, {"summary": parsed.get("summary", ""), "key_points": parsed.get("key_points", []), "relevance": parsed.get("relevance", "")})
+        except Exception as e:
+            self._json(500, {"error": str(e)[:200]})
 
     def log_message(self, *args):
         pass

@@ -314,28 +314,39 @@ def jina_search(query, key):
     return items
 
 
-def perplexity_verify(title, url, key):
-    """Second-layer source check: ask Perplexity sonar whether the headline/source
-    is credible and current. Returns (verdict, note, ok)."""
-    body = json.dumps({
-        "model": "sonar",
-        "messages": [
-            {"role": "system", "content": "You verify news/journalism sources. Answer in ONE compact JSON object with fields: credible (bool), current (bool), verdict (pick from VERIFIED, LIKELY, WEAK, UNVERIFIABLE), summary (<=12 words), reason (<=40 words). No extra text."},
-            {"role": "user", "content": f"Title: {title}\nURL: {url}\nThis is submitted for a 7-day niche-research brief. Is it a real, credible, recent thing to cite?"},
-        ],
-        "max_tokens": 220,
-    }).encode()
-    out = subprocess.run(["curl", "-sL", "-m", "40", "-X", "POST", "https://api.perplexity.ai/chat/completions",
+def ppl_text(messages, key, max_tokens):
+    """Perplexity Agent API (/v1/responses). Returns raw text or ""."""
+    body = json.dumps({"model": "perplexity/sonar", "input": messages, "max_output_tokens": max_tokens}).encode()
+    out = subprocess.run(["curl", "-sL", "-m", "60", "-X", "POST", "https://api.perplexity.ai/v1/responses",
                           "-H", f"Authorization: Bearer {key}", "-H", "Content-Type: application/json", "-d", body],
                          capture_output=True, text=True).stdout
     try:
         d = json.loads(out)
-        content = d["choices"][0]["message"]["content"]
+        ot = d.get("output") or d.get("output_text") or []
+        if isinstance(ot, str):
+            return ot
+        parts = []
+        for m in ot:
+            for c in (m.get("content") or []):
+                if c.get("type") == "output_text":
+                    parts.append(c.get("text", ""))
+        return "\n".join(parts)
     except Exception:
+        return ""
+
+
+def perplexity_verify(title, url, key, context=""):
+    """Second-layer source check via Perplexity. Returns (verdict, note, ok)."""
+    extra = f"\nExcerpt of the page content (for verification):\n{context[:1500]}" if context else ""
+    content = ppl_text([
+        {"role": "system", "content": [{"type": "input_text", "text": "You verify news/journalism sources. Answer in ONE compact JSON object with fields: credible (bool), current (bool), verdict (pick from VERIFIED, LIKELY, WEAK, UNVERIFIABLE), summary (<=12 words), reason (<=40 words). No extra text."}]},
+        {"role": "user", "content": [{"type": "input_text", "text": f"Title: {title}\nURL: {url}\nThis is submitted for a 7-day niche-research brief. Is it a real, credible, recent thing to cite?{extra}"}]},
+    ], key, 260)
+    if not content:
         return ("-", "perplexity call failed", False)
     m = re.search(r"\{.*\}", content, re.S)
     try:
-        j = json.loads(m.group(0)) if m else {}
+        j = json.loads(m.group(0))
     except Exception:
         j = {}
     if not j:
@@ -343,6 +354,61 @@ def perplexity_verify(title, url, key):
     v = str(j.get("verdict", "LIKELY"))
     why = str(j.get("reason", "") or "")[:90]
     return (v, f"credible={j.get('credible')} current={j.get('current')} · {why}", True)
+
+
+def perplexity_summary(title, url, key, context=""):
+    extra = f"\nExcerpt of the page content:\n{context[:1500]}" if context else ""
+    content = ppl_text([
+        {"role": "system", "content": [{"type": "input_text", "text": "Summarise this news item for a Linkedin creator focused on AI agents, Web3 search visibility, and AI safety. Reply with ONE JSON object only: {\"summary\": \"2-4 sentences\", \"key_points\": [\"bullet\", \"bullet\"], \"relevance\": \"one short founder-relevant reason\"}. Base it on the provided page excerpt if present; if the URL looks unreliable/unreachable, state that plainly inside summary."}]},
+        {"role": "user", "content": [{"type": "input_text", "text": f"Title: {title}\nURL: {url}{extra}"}]},
+    ], key, 480)
+    m = re.search(r"\{.*\}", content, re.S)
+    try:
+        return json.loads(m.group(0))
+    except Exception:
+        return {"summary": content[:400] or "(perplexity summary failed)", "key_points": [], "relevance": ""}
+
+
+def wikipedia_summary(title):
+    try:
+        q = urllib.parse.quote((title or "")[:120].replace("\u2019", "'"))
+        d = json.loads(urllib.request.urlopen(f"https://en.wikipedia.org/api/rest_v1/page/summary/{q}", timeout=15).read())
+        ext = (d.get("extract") or "").strip()
+        link = (d.get("content_urls") or {}).get("desktop", {}).get("page", "")
+        if ext:
+            return (d.get("title", ""), ext[:420], link)
+    except Exception:
+        pass
+    try:
+        u = "https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=" + urllib.parse.quote((title or "")[:120]) + "&format=json&srlimit=2&srnamespace=0"
+        hits = json.loads(urllib.request.urlopen(u, timeout=15).read()).get("query", {}).get("search", [])
+        for h in hits:
+            t = h["title"]
+            try:
+                d = json.loads(urllib.request.urlopen(f"https://en.wikipedia.org/api/rest_v1/page/summary/{urllib.parse.quote(t)}", timeout=15).read())
+                ext = (d.get("extract") or "").strip()
+                if ext:
+                    return (t, ext[:420], (d.get("content_urls") or {}).get("desktop", {}).get("page", "https://en.wikipedia.org/wiki/" + urllib.parse.quote(t.replace(" ", "_"))))
+            except Exception:
+                continue
+    except Exception:
+        pass
+    return (None, None, None)
+
+
+def arxiv_papers(title):
+    terms = re.sub(r"[^A-Za-z0-9 ]", " ", title or "")[:120].strip()
+    if not terms:
+        return []
+    try:
+        q = urllib.parse.quote('all:"' + terms + '"')
+        xml = urllib.request.urlopen(f"http://export.arxiv.org/api/query?search_query={q}&sortBy=submittedDate&sortOrder=descending&max_results=3", timeout=20).read().decode("utf-8", "ignore")
+    except Exception:
+        return []
+    ti = re.findall(r"<entry>.*?<title>(.*?)</title>", xml, re.S)
+    ids = re.findall(r"<id>(http://arxiv.org/abs/[^<]+)</id>", xml)
+    pub = re.findall(r"<published>([^<]+)</published>", xml)
+    return [{"title": t.strip()[:110], "id": ids[i] if i < len(ids) else "", "pub": (pub[i][:10] if i < len(pub) else "")} for i, t in enumerate(ti[:3])]
 
 
 def jina_read(url, key=None):
@@ -551,13 +617,25 @@ def run(args):
         uniq.append(i)
     def toks(t):
         return {w for w in re.findall(r"[a-z0-9]{3,}", t.lower()) if w not in STOP}
-    # cross-platform bonus: same story on >=2 sources (significant title words)
+    # cross-platform bonus: same story on >=2 sources (significant title words), and
+    # collect every URL/platform that carries each story for the Sources display
     for a in range(len(uniq)):
         for b in range(a + 1, len(uniq)):
             x, y = toks(uniq[a]["title"]), toks(uniq[b]["title"])
             if x and y and len(x & y) >= 3:
                 uniq[a]["cluster"] += 1
                 uniq[b]["cluster"] += 1
+    for it in uniq:
+        it["srcs"] = [(it["platform"], it["url"])]
+        seen = {it["url"]}
+        x = toks(it["title"])
+        for other in uniq:
+            if other is it:
+                continue
+            y = toks(other["title"])
+            if x and y and len(x & y) >= 3 and other["url"] not in seen:
+                seen.add(other["url"])
+                it["srcs"].append((other["platform"], other["url"]))
     tb = {"Tier1": 1.5, "Tier2": 1.0, "Expert": 0.9, "Community": 0.9, "Index": 0.2}
     def score(i):
         s = math.log10(max(i.get("signal") or 1, 1))
@@ -586,7 +664,11 @@ def run(args):
             out.append(f"- **{i['title'][:70]}** - {i['cluster']} sources")
     out += ["", "## Manual gate - approve the rows you want in the content matrix", ""]
     for i in themes[:12]:
-        out.append(f"- [ ] R{themes.index(i) + 1} | {i['title'][:64]} | {i['tier']} | {i['url']}")
+        via = ""
+        plats = sorted({p for p, _ in i.get("srcs", [])})
+        if len(plats) > 1:
+            via = " | via: " + ",".join(plats)
+        out.append(f"- [ ] R{themes.index(i) + 1} | {i['title'][:64]} | {i['tier']} | {i['url']}{via}")
     out += ["", "## Coverage note", ""]
     out += [f"- {c}" for c in coverage]
     out.append(f"- Window: last {days} days. Items older are excluded. Scores = log(signal) + tier bonus + recency + cross-platform cluster bonus.")
@@ -605,7 +687,60 @@ def main(argv):
     ap.add_argument("--linkedin", action="store_true", help="LinkedIn-only scan (indexed posts + Jina body enrichment)")
     ap.add_argument("--linkedin-url", nargs="*", help="read ONE or more specific public linkedin.com/posts URLs (Jina reader, fallback ScrapeGraph)")
     ap.add_argument("--verify", action="store_true", help="second layer: Perplexity re-verifies the approved rows in gate-approvals.json")
+    ap.add_argument("--polish", action="store_true", help="second stage: Perplexity summary + Wikipedia + arXiv enrichment per approved row")
     args = ap.parse_args(argv)
+    if args.polish:
+        load_env()
+        key = os.environ.get("PERPLEXITY_API_KEY")
+        if not key:
+            print("Polishing needs PERPLEXITY_API_KEY (research/setup-keys.sh)")
+            return 1
+        gp = os.path.join(ROOT, "research", "gate-approvals.json")
+        if not os.path.exists(gp):
+            print("No gate-approvals.json yet - approve rows in the gate UI first.")
+            return 1
+        rows = json.load(open(gp)).get("rows", [])
+        if not rows:
+            print("No approved rows to polish.")
+            return 1
+        print(f"Polishing {len(rows)} approved rows (Perplexity + Wikipedia + arXiv)...")
+        out = [f"# Polished approved research - {now_utc().strftime('%d/%m/%Y')}", ""]
+        jk = os.environ.get("JINA_API_KEY")
+        for r in rows:
+            t, u = r.get("title", ""), r.get("url", "")
+            out += [f"## {r.get('id','?')} · {t[:80]}", f"Link: {u}"]
+            body = ""
+            if jk:
+                try:
+                    body = jina_read(u, jk).strip().replace("\n", " ")[:1600]
+                except Exception:
+                    body = ""
+            verdict, why, okv = perplexity_verify(t, u, key, body)
+            summ = perplexity_summary(t, u, key, body)
+            sway = str(summ.get("summary", "") or "")[:700]
+            kp = summ.get("key_points") or []
+            rel = str(summ.get("relevance", "") or "")[:200]
+            wt, we, wl = wikipedia_summary(t)
+            arx = arxiv_papers(t)
+            out.append(f"- **Verdict**: {verdict} - {why}")
+            if sway:
+                out.append(f"- **Summary**: {sway}")
+            for k in kp[:2]:
+                out.append(f"  - {k}")
+            if rel:
+                out.append(f"- **Relevance for Zain**: {rel}")
+            if wt:
+                out.append(f"- **Wikipedia**: {wt} - {we} ( {wl} )")
+            if arx:
+                out.append(f"- **arXiv (recent papers)**")
+                for a in arx:
+                    out.append(f"  - {a['title']} - {a['pub']} {a['id']}")
+            out.append("")
+        out.append("Note: WEAK/UNVERIFIABLE rows are held before post-writer.")
+        target = args.out or os.path.join(ROOT, "research", f"polished-approved-{now_utc().strftime('%Y-%m-%d')}.md")
+        Path(target).write_text("\n".join(out))
+        print("wrote", target)
+        return 0
     if args.verify:
         load_env()
         key = os.environ.get("PERPLEXITY_API_KEY")
