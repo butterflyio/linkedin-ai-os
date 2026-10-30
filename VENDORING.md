@@ -20,7 +20,7 @@ and, where we build our own equivalent, ours is the one used.
 | post-formatter | reference | not vendored; framework-style posts can be handled by post-writer |
 | pinned-comment | reference | not built yet |
 | quote-post | reference | not built yet |
-| content-matrix | reference | not built yet |
+| content-matrix | **ours** | `skills/content-matrix` - uses niche-research briefs + ConnectSafely LinkedIn API/CLI, runs BEFORE post-writer |
 | profile-optimizer | reference | planned (later milestone) |
 | newsletter-voice | reference | out of scope for now |
 | niche-research | **in progress** | `research/brief.py` (pluggable providers) |

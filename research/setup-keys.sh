@@ -41,6 +41,8 @@ ask X_BEARER_TOKEN      "X/Twitter API bearer token"                     "https:
 ask SERPAPI_KEY         "Google SerpAPI (true Google SERP)"                "https://serpapi.com -> API key. Optional; some free search credits."
 ask JINA_API_KEY        "Jina Reader/search key"                            "https://jina.ai -> API key. Optional; raises the free reader rate limit."
 ask SCRAPEGRAPH_API_KEY "ScrapeGraph AI (search/scrape)"                   "https://scrapegraphai.com -> Dashboard -> API key. Optional; adds search + page scraping."
+ask CONNECTSAFELY_API_KEY "ConnectSafely LinkedIn API"                "https://connectsafely.ai/api-key -> $10/mo Ultimate Outreach. Used by the content-matrix skill."
+ask CONNECTSAFELY_ACCOUNT_ID "ConnectSafely account id"                 "Your account id (dashboard shows it). Use with the CLI."
 
 echo ""; echo "Done. research/.env updated (permissions 600)."
 echo "Test with:  python3 research/brief.py --out research/niche-brief-test.md"

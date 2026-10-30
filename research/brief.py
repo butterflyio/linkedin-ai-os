@@ -29,6 +29,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import math
 import datetime
 import json
 import os
@@ -40,6 +41,40 @@ from pathlib import Path
 
 UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/126.0 Safari/537.36"
 ROOT = Path(__file__).resolve().parent.parent
+# Source quality control: curated allowlist (Tier1/Tier2) + blocklist of
+# content farms. Community platforms (HN, Reddit, X) are Community - the
+# linked thread IS the source.
+TIER1 = {"wired.com","techcrunch.com","theverge.com","arstechnica.com","arxiv.org","nytimes.com","wsj.com","ft.com","bloomberg.com","reuters.com","economist.com","openai.com","anthropic.com","nature.com","science.org","ieee.org","lesswrong.com","mit.edu","ycombinator.com","github.com","substack.com","labs.ycombinator.com"}
+TIER2 = {"cointelegraph.com","decrypt.co","theblock.co","venturebeat.com","spectrum.ieee.org","huggingface.co","arcblock.io","eff.org","mozilla.org","blog.google","stripe.dev","supabase.com","vercel.com"}
+BLOCKED = {"appifydevs.com","bodhih.org","nnycomputers.net","aegis-stack.com","jelliu.co","leverandproof.com","node-devs.com","medium.com","quora.com","upfrog.com","scripted.com"}
+
+def clean_link(l):
+    l = (l or "").strip()
+    if l.startswith("/goto"):
+        return ""
+    if "http" not in l and "." in l:
+        l = "https://" + l
+    return l.split(" ›")[0].split(" ‹")[0].strip()
+
+def host_of(url):
+    m = re.match(r"https?://([^/]+)", (url or ""))
+    if not m:
+        return ""
+    h = m.group(1).lower()
+    return h[4:] if h.startswith("www.") else h
+
+def tier_of(url, platform):
+    if platform in ("HN", "Reddit", "X"):
+        return "Community"
+    host = host_of(url)
+    if host in BLOCKED: return "Blocked"
+    if host in TIER1: return "Tier1"
+    if host in TIER2: return "Tier2"
+    if platform == "Exa": return "Expert"
+    return "Index"
+
+STOP = {"the","what","are","how","they","work","works","working","and","with","for","that","this","from","have","been","had","build","building","example","examples","explained","why","use","used","your","you","yourself","ai","agent","agents","system","systems","multi","intelligence","intelligent"}
+
 # The niche as a set of facets - each facet is queried on every provider so
 # the brief covers the whole territory, not just one phrase.
 FACETS = [
@@ -95,6 +130,7 @@ def hn(queries, days):
                 continue
             items.append({
                 "title": h.get("title", "")[:150], "url": f"https://news.ycombinator.com/item?id={h.get('objectID')}",
+                "author": (h.get("author") or "")[:40],
                 "date": datetime.datetime.fromtimestamp(ts, datetime.timezone.utc), "platform": "HN",
                 "signal": h.get("points") or 0, "sub": "Hacker News",
             })
@@ -118,6 +154,7 @@ def reddit_archive(subs, days, limit=15):
                 continue
             items.append({
                 "title": (p.get("title") or "")[:150], "url": f"https://reddit.com{p.get('permalink','')}",
+                "author": (p.get("author") or "")[:40],
                 "date": datetime.datetime.fromtimestamp(ts, datetime.timezone.utc), "platform": "Reddit",
                 "signal": p.get("score") or 0, "sub": f"r/{sub}",
             })
@@ -211,7 +248,9 @@ def serpapi(query, key, days=7):
     for r in d.get("organic_results", [])[:8]:
         link = r.get("link", "")
         if link.startswith("/goto") and r.get("displayed_link"):
-            link = r.get("displayed_link")
+            link = clean_link(r.get("displayed_link"))
+        else:
+            link = clean_link(link)
         items.append({"title": (r.get("title") or "")[:150], "url": link,
                       "date": now_utc(), "platform": "Google/SerpAPI", "signal": 0, "sub": r.get("source",""),
                       "dated": False})
@@ -464,43 +503,64 @@ def run(args):
             coverage.append("Reddit official: skipped (no app yet)")
     coverage.append("Reddit: using Arctic Shift archive + site:reddit.com web hits")
 
-    # window + de-dup (dated news items get a small boost so web hits aren't
-    # buried under high-score HN/Reddit posts)
-    items = [i for i in all_items if i["date"] >= cutoff]
-    seen = set()
-    uniq = []
-    def rank(i):
-        s = i.get("signal") or 0
-        if i.get("dated") and i["platform"] not in ("HN", "Reddit"):
-            s += 9
-        return -s
-    for i in sorted(items, key=rank):
+    # window + de-dup + source quality + ranking
+    items = [i for i in all_items if i["date"] >= cutoff and host_of(i.get("url", "")) != "en.wikipedia.org"]
+    for i in items:
+        i["tier"] = tier_of(i.get("url", ""), i.get("platform", ""))
+    items = [i for i in items if i["tier"] != "Blocked"]  # drop content farms
+    for i in items:
+        i["who"] = i.get("author") or i.get("sub") or ""
+    seen, uniq = set(), []
+    for i in sorted(items, key=lambda x: -(x.get("signal") or 0)):
         key = re.sub(r"\W+", "", i["title"].lower())[:60]
         if key in seen:
             continue
         seen.add(key)
+        i["cluster"] = 1
         uniq.append(i)
-
-    # cluster into themes by shared key noun-phrases (lightweight, grounded)
-    theme_keys = []
+    def toks(t):
+        return {w for w in re.findall(r"[a-z0-9]{3,}", t.lower()) if w not in STOP}
+    # cross-platform bonus: same story on >=2 sources (significant title words)
+    for a in range(len(uniq)):
+        for b in range(a + 1, len(uniq)):
+            x, y = toks(uniq[a]["title"]), toks(uniq[b]["title"])
+            if x and y and len(x & y) >= 3:
+                uniq[a]["cluster"] += 1
+                uniq[b]["cluster"] += 1
+    tb = {"Tier1": 1.5, "Tier2": 1.0, "Expert": 0.9, "Community": 0.9, "Index": 0.2}
+    def score(i):
+        s = math.log10(max(i.get("signal") or 1, 1))
+        rec = 0.5 if i["date"] >= now_utc() - datetime.timedelta(days=2) else 0.3 if i["date"] >= now_utc() - datetime.timedelta(days=4) else 0.15
+        cross = 0.6 * (i.get("cluster", 1) - 1)
+        return s + tb.get(i["tier"], 0.4) + rec + cross
     for i in uniq:
-        tl = i["title"].lower()
-        if any(w in tl for w in ("agent", "openai", "anthropic", "model", "safety", "regulation", "web3", "swarm", "coding", "permission", "approval", "distill", "sweep", "infra")):
-            theme_keys.append(i)
-    themes = theme_keys or uniq[:12]
+        i["_score"] = round(score(i), 2)
+    uniq.sort(key=lambda x: -x["_score"])
+    themes = uniq[:24]
 
     today = now_utc().strftime("%d/%m/%Y")
     out = [f"# Niche Brief - {niche}", "", f"As of {today}", "",
-           "| Theme / item | Platform | Source | Link | Window | Signal |",
-           "|---|---|---|---|---|---|"]
-    for i in themes[:20]:
+           "| Rank | Score | Title | Who (author/community) | Tier | Platform | Link (verifiable) | Date |",
+           "|:--:|:--:|---|:--:|:--:|:--:|---|:--:|"]
+    for rank, i in enumerate(themes, 1):
         d = i["date"].strftime("%d/%m")
-        signal = f"~{i['signal']}" if i.get("signal") else "-"
-        out.append(f"| {i['title'][:80]} | {i['platform']} | {i.get('sub','')} | {i['url']} | {d} | {signal} |")
+        who = (i["who"] or "-")[:28]
+        link = i["url"] if len(i["url"]) < 72 else i["url"][:69] + "…"
+        signal = f"pts {i['signal']}" if i.get("signal") else "-"
+        out.append(f"| {rank} | {i['_score']:.2f} | {i['title'][:64]} | {who} | {i['tier']} | {i['platform']} | {link} | {d} |")
+    cols = list(zip([c["title"][:60] for c in themes], [c["cluster"] for c in themes]))
+    out += ["", "## Top clusters (same story on 2+ platforms)", ""]
+    for i in uniq:
+        if i.get("cluster", 1) > 1:
+            out.append(f"- **{i['title'][:70]}** - {i['cluster']} sources")
+    out += ["", "## Manual gate - approve the rows you want in the content matrix", ""]
+    for i in themes[:12]:
+        out.append(f"- [ ] R{themes.index(i) + 1} | {i['title'][:64]} | {i['tier']} | {i['url']}")
     out += ["", "## Coverage note", ""]
     out += [f"- {c}" for c in coverage]
-    out.append(f"- Window: last {days} days. Items older than the window are excluded.")
-    out.append("- Item titles are quoted verbatim from the source; dates are the source-reported publish dates.")
+    out.append(f"- Window: last {days} days. Items older are excluded. Scores = log(signal) + tier bonus + recency + cross-platform cluster bonus.")
+    out.append("- Every row carries its permalink (thread or article) for verification. Dates are source-reported.")
+    out.append("- Content farms and generic AI-blog domains are dropped by the source-quality gate.")
     out.append("- No engagement, comment or follower collection is performed (per the niche-research skill).")
     return "\n".join(out), coverage
 
