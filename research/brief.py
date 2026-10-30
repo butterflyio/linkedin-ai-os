@@ -124,6 +124,127 @@ def reddit_archive(subs, days, limit=15):
     return items
 
 
+def serper(query, key, days=7):
+    """Google SERP via serper.dev. Date filter qdr:w = past week."""
+    body = urllib.parse.urlencode({"q": query, "tbs": "qdr:w", "num": 10}).encode()
+    out = subprocess.run(["curl", "-sL", "-m", "25", "-X", "POST", "https://google.serper.dev/search",
+                          "-H", f"X-API-KEY: {key}", "-H", "Content-Type: application/x-www-form-urlencoded", "-d", body],
+                         capture_output=True, text=True).stdout
+    try:
+        d = json.loads(out)
+    except Exception:
+        return []
+    items = []
+    for r in d.get("organic", [])[:10]:
+        date = r.get("date") or r.get("datePublished") or ""
+        ts = None
+        if date:
+            for fmt in ("%b %d, %Y", "%Y-%m-%d", "%B %d, %Y"):
+                try:
+                    ts = datetime.datetime.strptime(date[:20].strip(), fmt).replace(tzinfo=datetime.timezone.utc)
+                    break
+                except Exception:
+                    continue
+        items.append({"title": (r.get("title") or "")[:150], "url": r.get("link", ""),
+                      "date": ts or now_utc(), "platform": "Google/Serper", "signal": 0, "sub": "", "dated": bool(ts)})
+    return items
+
+
+def exa_search(query, key, days=7):
+    since = (now_utc() - datetime.timedelta(days=days)).strftime("%Y-%m-%dT00:00:00.000Z")
+    body = json.dumps({"query": query, "numResults": 6, "startPublishedDate": since, "contents": {"title": True}}).encode()
+    out = subprocess.run(["curl", "-sL", "-m", "25", "-X", "POST", "https://api.exa.ai/search",
+                          "-H", f"x-api-key: {key}", "-H", "Content-Type: application/json", "-d", body],
+                         capture_output=True, text=True).stdout
+    try:
+        d = json.loads(out)
+    except Exception:
+        return []
+    items = []
+    for r in d.get("results", [])[:6]:
+        ts = None
+        raw = r.get("publishedDate") or r.get("published_date")
+        if raw:
+            try:
+                ts = datetime.datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+            except Exception:
+                pass
+        items.append({"title": (r.get("title") or "")[:150], "url": r.get("url", ""),
+                      "date": ts or now_utc(), "platform": "Exa", "signal": 0, "sub": r.get("source",""),
+                      "dated": ts is not None})
+    return items
+
+
+def firecrawl_search(query, key):
+    body = json.dumps({"query": query, "limit": 8}).encode()
+    out = subprocess.run(["curl", "-sL", "-m", "25", "-X", "POST", "https://api.firecrawl.dev/v1/search",
+                          "-H", f"Authorization: Bearer {key}", "-H", "Content-Type: application/json", "-d", body],
+                         capture_output=True, text=True).stdout
+    try:
+        d = json.loads(out)
+    except Exception:
+        return []
+    items = []
+    for r in (d.get("data", d.get("results", [])) or [])[:8]:
+        ts = None
+        raw = r.get("publishedDate") or r.get("date") or r.get("publishedAt")
+        if raw:
+            try:
+                ts = datetime.datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+            except Exception:
+                pass
+        items.append({"title": (r.get("title") or "")[:150], "url": r.get("url", ""),
+                      "date": ts or now_utc(), "platform": "Firecrawl", "signal": 0, "sub": r.get("domain",""),
+                      "dated": ts is not None})
+    return items
+
+
+def serpapi(query, key, days=7):
+    """Google SERP via serpapi.com (true Google past-week filter)."""
+    p = urllib.parse.urlencode({"engine": "google", "q": query, "tbs": "qdr:w", "num": 8, "api_key": key})
+    out = subprocess.run(["curl", "-sL", "-m", "25", "-A", "Mozilla/5.0", "https://serpapi.com/search.json?" + p], capture_output=True, text=True).stdout
+    try:
+        d = json.loads(out)
+    except Exception:
+        return []
+    items = []
+    for r in d.get("organic_results", [])[:8]:
+        items.append({"title": (r.get("title") or "")[:150], "url": r.get("link", ""),
+                      "date": now_utc(), "platform": "Google/SerpAPI", "signal": 0, "sub": r.get("source",""),
+                      "dated": False})
+    return items
+
+
+def x_recent(query, key, days=7):
+    """X API v2 recent search. Requires search tier permission."""
+    until = now_utc()
+    since = (until - datetime.timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    q = urllib.parse.quote(f"{query} lang:en -is:reply -is:retweet")
+    url = f"https://api.twitter.com/2/tweets/search/recent?query={q}&max_results=10&start_time={since}&tweet.fields=created_at,public_metrics"
+    out = subprocess.run(["curl", "-sL", "-m", "25", "-H", f"Authorization: Bearer {key}", url], capture_output=True, text=True).stdout
+    try:
+        d = json.loads(out)
+    except Exception:
+        return []
+    items = []
+    for t in d.get("data", [])[:10]:
+        ts = None
+        try:
+            ts = datetime.datetime.fromisoformat(t["created_at"].replace("Z", "+00:00"))
+        except Exception:
+            pass
+        items.append({"title": (t.get("text") or "")[:150], "url": f"https://x.com/i/web/status/{t['id']}",
+                      "date": ts or now_utc(), "platform": "X", "signal": 0, "sub": "X post", "dated": bool(ts)})
+    return items
+
+
+def jina_read(url, key=None):
+    """Jina Reader: any URL -> clean text (free; optional key lifts rate limits)."""
+    h = ["-H", "Accept: application/json"] if False else (["-H", f"Authorization: Bearer {key}"] if key else [])
+    out = subprocess.run(["curl", "-sL", "-m", "25", "-A", "Mozilla/5.0"] + h + ["https://r.jina.ai/" + url], capture_output=True, text=True).stdout
+    return out[:4000]
+
+
 def tavily(query, days, key):
     if not key:
         return [], "Tavily skipped (no TAVILY_API_KEY)"
@@ -208,18 +329,63 @@ def run(args):
     else:
         coverage.append("Tavily: skipped (no TAVILY_API_KEY)")
 
-    for prov in ("REDDIT_CLIENT_ID", "EXA_API_KEY", "FIRECRAWL_API_KEY", "SERPER_API_KEY", "X_BEARER_TOKEN"):
+    # Google SERP (serper) - also pulls site:reddit.com to widen Reddit coverage
+    if os.environ.get("SERPER_API_KEY"):
+        for q in all_queries + [f"site:reddit.com {facets[0]['name'].lower()}"]:
+            all_items += serper(q, os.environ["SERPER_API_KEY"], days)
+        coverage.append(f"Serper (Google SERP, past-week): {len(all_queries) + 1} queries (incl. site:reddit.com)")
+    else:
+        coverage.append("Serper: skipped (no SERPER_API_KEY)")
+
+    if os.environ.get("SERPAPI_KEY"):
+        for q in all_queries[:4]:
+            all_items += serpapi(q, os.environ["SERPAPI_KEY"], days)
+        coverage.append("Google SerpAPI (true Google past-week): 4 queries enabled")
+    else:
+        coverage.append("Google SerpAPI: skipped (no SERPAPI_KEY)")
+
+    if os.environ.get("EXA_API_KEY"):
+        for q in all_queries:
+            all_items += exa_search(q, os.environ["EXA_API_KEY"], days)
+        coverage.append(f"Exa (experts/papers, last {days}d): {len(all_queries)} queries")
+    else:
+        coverage.append("Exa: skipped (no EXA_API_KEY)")
+
+    if os.environ.get("FIRECRAWL_API_KEY"):
+        for q in all_queries:
+            all_items += firecrawl_search(q, os.environ["FIRECRAWL_API_KEY"])
+        coverage.append(f"Firecrawl (web/dates): {len(all_queries)} queries")
+    else:
+        coverage.append("Firecrawl: skipped (no FIRECRAWL_API_KEY)")
+
+    if os.environ.get("X_BEARER_TOKEN"):
+        got = 0
+        for q in all_queries[:4]:
+            it = x_recent(q, os.environ["X_BEARER_TOKEN"], days)
+            got += len(it)
+            all_items += it
+        coverage.append(f"X (Twitter API v2 recent search): {got} tweets (check tier permission if 0)")
+    else:
+        coverage.append("X: skipped (no X_BEARER_TOKEN)")
+
+    for prov in ("REDDIT_CLIENT_ID", "JINA_API_KEY"):
         if os.environ.get(prov):
             coverage.append(f"{prov.split('_')[0]}: enabled")
         else:
-            key = prov.replace("_CLIENT_ID", "").replace("_API_KEY", "").replace("_BEARER_TOKEN", "")
             coverage.append(f"{prov.split('_')[0]}: skipped (no key)")
+    coverage.append("Reddit: official API parked (no app yet); using Arctic Shift archive + site:reddit.com web hits instead")
 
-    # window + de-dup
+    # window + de-dup (dated news items get a small boost so web hits aren't
+    # buried under high-score HN/Reddit posts)
     items = [i for i in all_items if i["date"] >= cutoff]
     seen = set()
     uniq = []
-    for i in sorted(items, key=lambda x: -x["signal"]):
+    def rank(i):
+        s = i.get("signal") or 0
+        if i.get("dated") and i["platform"] not in ("HN", "Reddit"):
+            s += 9
+        return -s
+    for i in sorted(items, key=rank):
         key = re.sub(r"\W+", "", i["title"].lower())[:60]
         if key in seen:
             continue
