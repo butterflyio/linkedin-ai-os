@@ -201,7 +201,7 @@ def firecrawl_search(query, key):
 
 def serpapi(query, key, days=7):
     """Google SERP via serpapi.com (true Google past-week filter)."""
-    p = urllib.parse.urlencode({"engine": "google", "q": query, "tbs": "qdr:w", "num": 8, "api_key": key})
+    p = urllib.parse.urlencode({"engine": "google", "q": query, "tbs": "qdr:m", "num": 8, "api_key": key})
     out = subprocess.run(["curl", "-sL", "-m", "25", "-A", "Mozilla/5.0", "https://serpapi.com/search.json?" + p], capture_output=True, text=True).stdout
     try:
         d = json.loads(out)
@@ -209,7 +209,10 @@ def serpapi(query, key, days=7):
         return []
     items = []
     for r in d.get("organic_results", [])[:8]:
-        items.append({"title": (r.get("title") or "")[:150], "url": r.get("link", ""),
+        link = r.get("link", "")
+        if link.startswith("/goto") and r.get("displayed_link"):
+            link = r.get("displayed_link")
+        items.append({"title": (r.get("title") or "")[:150], "url": link,
                       "date": now_utc(), "platform": "Google/SerpAPI", "signal": 0, "sub": r.get("source",""),
                       "dated": False})
     return items
@@ -310,6 +313,25 @@ def tavily(query, days, key):
         })
     return items, None
 
+
+def collect_linkedin(key, use_serpapi, days=7):
+    """LinkedIn layer: Google-indexed site:linkedin.com results via
+    Serper/SerpAPI. LinkedIn blocks raw scraping of feeds, so this uses the
+    index - we widen to the last month (qdr:m) because fresh niche posts are
+    rarely indexed within 7 days; dates are checked afterwards when visible."""
+    terms = ["AI agents", "agentic AI", "generative engine optimization", "answer engine optimization", "AI safety", "AI alignment"]
+    items = []
+    for term in terms:
+        q = f"site:linkedin.com {term}"
+        batch = serpapi(q, key, days) if use_serpapi else serper(q, key, days)
+        for it in batch:
+            host = (it.get("url") or "").lower()
+            if "linkedin.com/posts" not in host and "linkedin.com/feed" not in host:
+                continue
+            it["platform"] = "LinkedIn"
+            it["sub"] = term
+            items.append(it)
+    return items
 
 # ── run ─────────────────────────────────────────────────────────────────────
 
@@ -416,6 +438,25 @@ def run(args):
     else:
         coverage.append("X: skipped (no valid X_BEARER_TOKEN)")
 
+    # LinkedIn collection layer (Google-indexed site:linkedin.com, past-week)
+    li_key = os.environ.get("SERPER_API_KEY") or os.environ.get("SERPAPI_KEY")
+    if li_key:
+        li_items = collect_linkedin(li_key, bool(os.environ.get("SERPAPI_KEY")), days)
+        for it in li_items:
+            it["snippet"] = ""
+            all_items.append(it)
+        coverage.append(f"LinkedIn (site:linkedin.com indexed, past-week): {len(li_items)} posts")
+        # enrich top LinkedIn posts with body text via Jina reader (key-gated)
+        jk = os.environ.get("JINA_API_KEY")
+        for it in sorted(li_items, key=lambda x: not x.get("dated"))[:4]:
+            if jk:
+                body = jina_read(it["url"], jk)
+                it["snippet"] = body.strip().replace("\n", " ")[:260]
+            else:
+                it["snippet"] = "(body fetch skipped - no JINA_API_KEY)"
+    else:
+        coverage.append("LinkedIn: skipped (needs SERPER_API_KEY or SERPAPI_KEY)")
+
     for prov in ("REDDIT_CLIENT_ID",):
         if os.environ.get(prov) and len(os.environ.get(prov, "")) > 6:
             coverage.append("Reddit official: enabled")
@@ -470,7 +511,74 @@ def main(argv):
     ap.add_argument("--days", type=int, default=7)
     ap.add_argument("--subs", help="comma-separated subreddits")
     ap.add_argument("--out", help="output file path")
+    ap.add_argument("--linkedin", action="store_true", help="LinkedIn-only scan (indexed posts + Jina body enrichment)")
+    ap.add_argument("--linkedin-url", nargs="*", help="read ONE or more specific public linkedin.com/posts URLs (Jina reader, fallback ScrapeGraph)")
     args = ap.parse_args(argv)
+    if args.linkedin_url:
+        load_env()
+        jk = os.environ.get("JINA_API_KEY")
+        sk = os.environ.get("SCRAPEGRAPH_API_KEY")
+        print(f"# LinkedIn URL reads ({len(args.linkedin_url)} URLs)")
+        for u in args.linkedin_url:
+            if not ("linkedin.com/posts" in u or "linkedin.com/feed" in u):
+                print(f"\n## SKIP (not a public post URL): {u}")
+                continue
+            body = ""
+            if jk:
+                try:
+                    body = jina_read(u, jk)
+                except Exception:
+                    body = ""
+            if not body and sk:
+                try:
+                    out = subprocess.run(["curl", "-sL", "-m", "40", "-X", "POST", "https://api.scrapegraphai.com/v1/markdown",
+                                          "-H", f"SGS-API-KEY: {sk}", "-H", "Content-Type: application/json",
+                                          "-d", json.dumps({"url": u}).encode()], capture_output=True, text=True).stdout
+                    body = out[:4000]
+                except Exception:
+                    body = ""
+            if not body or "login" in body[:1200].lower():
+                print(f"\n## {u}\n- BODY BLOCKED (login wall/fingerprint). This post is not publicly readable - the platform only serves it to signed-in sessions.")
+                continue
+            date = "(no date found)"
+            m = re.search(r"(20\d{2}-\d{2}-\d{2}|\d{1,2} \w+ 20\d{2})", body)
+            if m:
+                date = m.group(1)
+            print(f"\n## {u}  (date ~ {date})")
+            print(body[:900].replace(chr(10), " \n"))
+        return 0
+    if args.linkedin:
+        load_env()
+        key = os.environ.get("SERPER_API_KEY") or os.environ.get("SERPAPI_KEY")
+        if not key:
+            print("LinkedIn layer needs SERPER_API_KEY or SERPAPI_KEY.")
+            return 1
+        items = collect_linkedin(key, bool(os.environ.get("SERPAPI_KEY")), args.days)
+        jk = os.environ.get("JINA_API_KEY")
+        for it in items:
+            it["snippet"] = ""
+            if jk:
+                try:
+                    it["snippet"] = jina_read(it["url"], jk).strip().replace("\n", " ")[:260]
+                except Exception:
+                    it["snippet"] = "(fetch failed)"
+        lines = [f"# LinkedIn scan - indexed posts (past {args.days} days)", "", f"As of {now_utc().strftime('%d/%m/%Y')}", "",
+                 "| Title | Search term | Link |", "|---|---|---|"]
+        for it in items:
+            lines.append(f"| {it['title'][:70]} | {it.get('sub','')} | {it['url']} |")
+        lines += ["", "## Post bodies (Jina reader, first ~260 chars)", ""]
+        for it in items:
+            if it.get("snippet"):
+                lines.append(f"- **{it['title'][:60]}**")
+                lines.append(f"  {it['snippet']}")
+        lines.append("")
+        lines.append("Coverage: Google-indexed site:linkedin.com results. LinkedIn blocks raw API/feed scraping, so this is the standard public layer; bodies were filled where Jina could read the page.")
+        if args.out:
+            Path(args.out).write_text("\n".join(lines))
+            print(f"wrote {args.out} ({len(items)} LinkedIn posts)")
+        else:
+            print("\n".join(lines))
+        return 0
     text, coverage = run(args)
     if args.out:
         Path(args.out).write_text(text)
