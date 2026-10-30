@@ -40,7 +40,30 @@ from pathlib import Path
 
 UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/126.0 Safari/537.36"
 ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_NICHE = "AI agents x Web3 x AI safety"
+# The niche as a set of facets - each facet is queried on every provider so
+# the brief covers the whole territory, not just one phrase.
+FACETS = [
+    {
+        "name": "AI agents / agentic AI",
+        "keywords": ["agent", "codi"],
+        "queries": ["AI agents", "agentic AI", "autonomous agents", "multi-agent system", "AI agent launch"],
+        "subs": ["artificial", "ClaudeAI", "OpenAI", "LLMDevs", "LocalLLaMA", "AgentZ"],
+    },
+    {
+        "name": "Web3 SEO / AEO / GEO",
+        "keywords": ["seo", "aeo", "geo", "answer engine", "generative engine", "llm citation", "ai visibility", "web3 seo"],
+        "queries": ["AI search visibility (AEO)", "generative engine optimization (GEO)", "LLM citation SEO", "Web3 visibility traffic", "answer engine optimization"],
+        "subs": ["SEO", "TechSEO", "web3", "bigseo"],
+    },
+    {
+        "name": "AI safety / alignment",
+        "keywords": ["safety", "alignment", "frontier", "regulat", "governance", "evaluat"],
+        "queries": ["AI safety frontier", "AI alignment research", "agent safety policy", "AI governance regulation"],
+        "subs": ["singularity", "ControlProblem", "ai_safety", "MachineLearning"],
+    },
+]
+
+DEFAULT_NICHE = "agentic AI (AI agents, Web3 SEO/AEO/GEO, AI safety & alignment)"
 NAME = (ROOT / "brands" / "you" / "about-me.md").exists() and "Zain" or "you"
 
 
@@ -152,21 +175,36 @@ def run(args):
     coverage = []
     all_items = []
 
-    # zero-key layers always run
-    all_items += hn([niche, "AI agents" if "agent" not in niche.lower() else niche, "AI safety", "coding agent"], days)
-    coverage.append(f"Hacker News (Algolia): queried '{niche}' + AI safety/coding agent terms")
+    # facets: a custom --niche that names one facet focuses the brief;
+    # the default covers all facets
+    focused = None
+    if args.niche:
+        phrase = args.niche.lower()
+        for fx in FACETS:
+            if any(k in phrase for k in fx["keywords"]):
+                focused = fx
+                break
+    facets = [focused] if focused else FACETS
+    coverage.append(f"Niche facets: {', '.join(f['name'] for f in facets)}")
 
-    reddit_subs = [s.strip() for s in (args.subs or "artificial,ClaudeAI,OpenAI,LLMDevs,LocalLLaMA,web3,singularity").split(",") if s.strip()]
+    all_queries = [q for fx in facets for q in fx["queries"]]
+    all_subs = [s for fx in facets for s in fx["subs"]]
+
+    # zero-key layers always run (per-facet queries)
+    all_items += hn(all_queries, days)
+    coverage.append(f"Hacker News (Algolia): {len(all_queries)} facet queries")
+
+    reddit_subs = [s.strip() for s in (args.subs or ",".join(dict.fromkeys(all_subs))).split(",") if s.strip()]
     rd = reddit_archive(reddit_subs, days)
     all_items += rd
-    coverage.append(f"Reddit (Arctic Shift archive): {len(rd)} posts from {', '.join('r/'+s for s in reddit_subs[:6])}")
+    coverage.append(f"Reddit (Arctic Shift archive): {len(rd)} posts from {', '.join('r/'+s for s in reddit_subs[:8])}")
 
-    # key-gated layers
+    # Tavily per facet
     if os.environ.get("TAVILY_API_KEY"):
-        for q in [niche, f"{niche} launch", f"{niche} regulation"]:
+        for q in all_queries:
             it, warn = tavily(q, days, os.environ["TAVILY_API_KEY"])
             all_items += it
-        coverage.append("Tavily: web search enabled")
+        coverage.append(f"Tavily: {len(all_queries)} web queries enabled")
     else:
         coverage.append("Tavily: skipped (no TAVILY_API_KEY)")
 
