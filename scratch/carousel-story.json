@@ -2,7 +2,9 @@
   "slides": [
     {
       "kicker": "This time last year",
-      "headline": "A kid who wanted to build things",
+      "kSize": 46,
+      "headline": "I always wanted to build things",
+      "hSize": 64,
       "sub": "(websites, marketing, big ideas. too many strings to pull.)",
       "align": "right",
       "mood": ["#14161d", "#2a2436"],
@@ -10,27 +12,43 @@
     },
     {
       "kicker": "For years I hit the same wall",
-      "headline": "No team. No time. No clue.",
-      "sub": "olive oil taught me margins. coaching taught me my time was the limit.",
+      "kSize": 46,
+      "headline": "Team was too expensive to manage",
+      "hSize": 58,
+      "sub": "My previous businesses gave me experiences.",
       "align": "center",
       "mood": ["#171513", "#2a2317"],
       "img": ""
     },
     {
       "kicker": "Then AI showed up",
-      "headline": "One agent builds. You orchestrate.",
-      "sub": "a small swarm does the making. you do the deciding.",
+      "kSize": 46,
+      "headline": "One agent builds. Now you orchestrate.",
+      "hSize": 52,
+      "sub": "A dedicated agentic swarm does the heavy lifting while you orchestrate.",
       "align": "center",
       "mood": ["#101826", "#1f2438"],
       "img": ""
     },
     {
-      "kicker": "So now",
+      "kicker": "In 2026",
+      "kSize": 46,
       "headline": "You are in control",
+      "hSize": 92,
       "underline": true,
-      "sub": "the kid who couldn't build now runs the whole show.",
+      "sub": "You can build anything.",
       "align": "center",
       "mood": ["#0e1410", "#1c2a20"],
+      "img": ""
+    },
+    {
+      "kicker": "Reach out",
+      "kSize": 46,
+      "headline": "For all your marketing solutions",
+      "hSize": 68,
+      "sub": "I help marketing teams and founders solve problems in specific industries.",
+      "align": "center",
+      "mood": ["#161a2a", "#20263c"],
       "img": ""
     }
   ]
