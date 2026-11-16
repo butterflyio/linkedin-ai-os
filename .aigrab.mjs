@@ -1,0 +1,11 @@
+import { createRequire } from "node:module";
+const require = createRequire(import.meta.url);
+const puppeteer = require("puppeteer-core");
+const chrome = "/home/zain/.cache/pptr/chrome-headless-shell/linux-156.0.8078.80/chrome-headless-shell-linux64/chrome-headless-shell";
+const browser = await puppeteer.launch({ executablePath: chrome, args: ["--no-sandbox","--disable-gpu"], defaultViewport:{width:1200,height:900} });
+const page = await browser.newPage();
+await page.goto("https://mixkit.co/free-stock-video/artificial-intelligence/", { waitUntil: "domcontentloaded", timeout: 40000 });
+await new Promise(r => setTimeout(r, 7000));
+const vids = await page.evaluate(() => [...new Set([...document.querySelectorAll("video source, video[src]")].map(v => v.src || v.currentSrc).filter(s => s && s.includes("h264")) )].slice(0,8));
+console.log(JSON.stringify(vids));
+await browser.close();
