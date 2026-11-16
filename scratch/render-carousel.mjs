@@ -41,11 +41,12 @@ body{width:${W}px;height:${H}px;overflow:hidden;font-family:-apple-system,'Segoe
 .bgimg{position:absolute;inset:0}
 .grain{position:absolute;inset:0;background:radial-gradient(90% 70% at 50% 34%,rgba(255,255,255,.07),transparent 62%)}
 .scrim{position:absolute;inset:0;background:radial-gradient(120% 130% at 50% 50%,transparent 26%,rgba(0,0,0,.35) 70%,rgba(0,0,0,.66) 100%)}
-.text{position:absolute;${align === "right" ? "right:66px;text-align:right" : "left:66px;right:66px;text-align:center"};top:${sl.posTop || 48}%;transform:translateY(-50%);color:#fff;max-width:880px}
+.scrimTop{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.74) 0%,rgba(0,0,0,.40) 32%,transparent 55%)}
+.text{position:absolute;${align === "right" ? "right:66px;text-align:right" : "left:66px;right:66px;text-align:center"};top:${sl.posTop || 15}%;transform:translateY(-50%);color:#fff;max-width:880px}
 .k{white-space:nowrap;font-size:${kF}px;font-weight:600;opacity:.92}
 .h{white-space:nowrap;font-size:${hF}px;font-weight:800;letter-spacing:-.02em;line-height:1.06;margin-top:18px}
 .sub{white-space:nowrap;font-size:${sF}px;font-weight:400;opacity:.86;margin-top:26px;line-height:1.3;font-style:italic}
-</style></head><body><div class="stage">${img}<div class="bgimg"></div><div class="grain"></div><div class="scrim"></div>
+</style></head><body><div class="stage">${img}<div class="bgimg"></div><div class="grain"></div><div class="scrim"></div><div class="scrimTop"></div>
 <div class="text"><div class="k">${sl.kicker || ""}</div><div class="h"><span style="${hStyle}">${sl.headline || ""}</span></div>${sl.sub ? `<div class="sub">${sl.sub}</div>` : ""}</div>
 </div></body></html>`;
 }
