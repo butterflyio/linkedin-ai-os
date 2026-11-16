@@ -204,91 +204,111 @@ requestAnimationFrame(tick);
 <div class="doodle d2" style="left:-110px;bottom:-90px"></div>
 </div>`;
 } else if (S.mode === "trailer") {
-  // Trailer v2 - 'agent x human -> one site' on a clean white stage.
-  // Left phone: the AGENT (back end). Right phone: the HUMAN (front end).
-  // Middle: a browser showing a REAL site ([siteImg]) = the thing they built
-  // together. Everything stays inside its phone (contained, subtle motion).
-  const [W, H] = S.size;
+  // Trailer v3 - brand palette, realistic light iPhones, designed mini-site.
   const D = S.duration || 6.0;
   const L = S.left || {}, Rc = S.right || {}, M = S.mid || {};
+  const BLUE = "#0667d2", PURPLE = "#6a3fd1", TEAL = "#0f8fa8", INK = "#1c1e26";
+  const SOFT = "#f2f5f9", LINE = "#dfe5ee";
   css = `
-.trailer{position:absolute;inset:0;overflow:hidden;background:#ffffff;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
-.blob{position:absolute;border-radius:50%;filter:blur(8px)}
-.b1{width:300px;height:300px;left:-120px;top:-120px;background:#e8effb}
-.b2{width:340px;height:340px;right:-140px;top:-100px;background:#f1e9fb}
-.b3{width:260px;height:260px;left:-40px;bottom:-120px;background:#e7f4ec}
-.b4{width:280px;height:280px;right:-60px;bottom:-130px;background:#ffeef2}
-.kicker{position:absolute;top:34px;left:0;right:0;text-align:center;font-size:19px;font-weight:800;letter-spacing:.24em;text-transform:uppercase;color:#3b4252}
-.phone{position:absolute;border-radius:30px;box-shadow:0 18px 44px rgba(30,40,80,.18);z-index:2}
-.phone .island{width:36%;height:7px;border-radius:4px;background:#000;margin:5px auto 0}
-.screen{position:relative;border-radius:24px;overflow:hidden;width:100%;height:100%}
-.pleft{width:128px;height:262px;left:74px;top:150px;background:#101114}
-.plt{position:absolute;top:50px;left:0;right:0;text-align:center;font-size:13px;font-weight:900;letter-spacing:.18em;color:#fff}
-.plr{position:absolute;top:68px;left:0;right:0;text-align:center;font-size:9px;color:rgba(255,255,255,.6);letter-spacing:.06em}
-.plc{position:absolute;left:14px;right:14px;top:92px;display:flex;flex-direction:column;gap:7px}
-.plc span{background:#1d2029;border:1px solid #2b2f3a;color:#cdd3e0;border-radius:8px;font-size:10px;font-weight:700;text-align:center;padding:6px 0}
-.dots{position:absolute;left:0;right:0;bottom:26px;display:flex;justify-content:center;gap:6px}
-.dots i{width:7px;height:7px;border-radius:50%;background:${S.accentHot || "#e6007e"};display:block;animation:dot 1.4s ease-in-out infinite}
-.dots i:nth-child(2){animation-delay:.2s}.dots i:nth-child(3){animation-delay:.4s}
-@keyframes dot{0%,100%{opacity:.25;transform:translateY(0)}45%{opacity:1;transform:translateY(-3px)}}
-.pright{width:128px;height:262px;left:598px;top:150px;background:#ffffff;border:2px solid #e4e8ef}
-.prt{position:absolute;top:50px;left:0;right:0;text-align:center;font-size:13px;font-weight:900;letter-spacing:.18em;color:#1c1e26}
-.prr{position:absolute;top:68px;left:0;right:0;text-align:center;font-size:9px;color:#7b8293;letter-spacing:.06em}
-.prc{position:absolute;left:14px;right:14px;top:92px;display:flex;flex-direction:column;gap:7px}
-.prc span{background:#f6f8fb;border:1px solid #e4e8ef;color:#31405c;border-radius:8px;font-size:10px;font-weight:700;text-align:center;padding:6px 0}
-.cursor{position:absolute;left:0;right:0;bottom:26px;text-align:center}
-.cursor i{display:inline-block;width:6px;height:14px;background:#e6007e;animation:cur 1s steps(1) infinite}
-@keyframes cur{0%,49%{opacity:1}50%,100%{opacity:0}}
-.pmid{width:160px;height:336px;left:318px;top:82px;background:#ffffff;border:2px solid #e4e8ef;border-radius:32px;z-index:3}
-.browser{position:absolute;inset:6px;background:#fff;border-radius:26px;overflow:hidden;border:1px solid #eef1f5}
-.bar{display:flex;align-items:center;gap:6px;height:30px;padding:0 10px;background:#f8fafc;border-bottom:1px solid #eef1f5}
-.bar i{width:8px;height:8px;border-radius:50%}
-.bar .url{flex:1;height:16px;border-radius:8px;background:#eef1f5;font-size:8px;line-height:16px;color:#6b7280;padding:0 8px}
-.site{position:absolute;left:0;right:0;top:30px;bottom:34px}
-.site img{width:100%;height:100%;object-fit:cover;transform:scale(1.6);transform-origin:50% 6%}
-.rib{position:absolute;left:8px;right:8px;bottom:7px;height:22px;border-radius:11px;background:rgba(255,255,255,.86);box-shadow:0 2px 8px rgba(40,50,90,.14);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#11131a;letter-spacing:.08em}
-.rib b{color:${S.accentHot || "#e6007e"}}
+.trailer{position:absolute;inset:0;overflow:hidden;background:#fbfcfe;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
+.blob{position:absolute;border-radius:50%;filter:blur(14px)}
+.b1{width:330px;height:330px;left:-140px;top:-120px;background:#e3edfb}
+.b2{width:360px;height:360px;right:-150px;top:-110px;background:#efe8fb}
+.b3{width:280px;height:280px;left:-70px;bottom:-130px;background:#e4f4f7}
+.b4{width:300px;height:300px;right:-80px;bottom:-140px;background:#fdeee7}
+.kicker{position:absolute;top:32px;left:0;right:0;text-align:center;font-size:18px;font-weight:800;letter-spacing:.26em;text-transform:uppercase;color:#3b4252}
+.phone{position:absolute;border-radius:44px;background:#1c1d24;padding:9px;box-shadow:0 20px 46px rgba(30,45,90,.22);z-index:2}
+.screen{position:relative;border-radius:34px;overflow:hidden;background:#fff;width:100%;height:100%}
+.island{position:absolute;top:9px;left:50%;transform:translateX(-50%);width:38%;height:13px;border-radius:7px;background:#05060a;z-index:3}
+.home{position:absolute;bottom:7px;left:50%;transform:translateX(-50%);width:34px;height:4px;border-radius:2px;background:#d6dae2;z-index:3}
+.pleft{width:132px;height:272px;left:70px;top:140px}
+.plb{position:absolute;left:16px;right:16px;bottom:18px;display:flex;gap:5px;justify-content:center;align-items:center}
+.plb i{width:7px;height:7px;border-radius:50%;background:${BLUE};opacity:.25;animation:bd 1.5s ease-in-out infinite}
+.plb i:nth-child(2){animation-delay:.22s}.plb i:nth-child(3){animation-delay:.44s}
+@keyframes bd{0%,100%{opacity:.25;transform:translateY(0)}45%{opacity:1;transform:translateY(-3px)}}
+.phead{display:flex;flex-direction:column;align-items:center;padding:40px 10px 0}
+.phead .tt{font-size:15px;font-weight:900;letter-spacing:.2em;color:${BLUE}}
+.phead .role{font-size:9px;color:#7a8296;letter-spacing:.08em;margin-top:2px}
+.plist{display:flex;flex-direction:column;gap:8px;padding:14px 12px 0}
+.plist div{height:34px;border:1.5px solid ${LINE};background:#fff;border-radius:12px}
+.plist div span{display:block;height:8px;width:60%;border-radius:4px;background:${SOFT};margin:12px 10px}
+.plist div:nth-child(1) span{background:${BLUE};opacity:.55}
+.plist div:nth-child(2) span{background:${BLUE};opacity:.3}
+.plist div:nth-child(3) span{background:${BLUE};opacity:.18}
+.pright{width:132px;height:272px;left:598px;top:140px}
+.prb{position:absolute;left:0;right:0;bottom:18px;text-align:center}
+.prb i{display:inline-block;width:6px;height:13px;background:${PURPLE};animation:cu 1s steps(1) infinite}
+@keyframes cu{0%,49%{opacity:1}50%,100%{opacity:0}}
+.pmid{width:168px;height:352px;left:316px;top:72px;z-index:3}
+.bar{display:flex;align-items:center;gap:5px;height:30px;padding:0 10px;background:#fafbfd;border-bottom:1px solid ${LINE}}
+.bar i{width:7px;height:7px;border-radius:50%}
+.bar .url{flex:1;height:15px;border-radius:8px;background:#f0f3f7;font-size:7px;line-height:15px;color:#6b7280;padding:0 8px}
+.page{position:absolute;left:0;right:0;top:30px;bottom:26px;background:#fff;will-change:transform}
+.hero{height:104px;background:linear-gradient(135deg,${BLUE},${TEAL});position:relative}
+.hero div{position:absolute;left:12px;bottom:12px;color:#fff}
+.hero div i{display:block;font-style:normal;font-size:13px;font-weight:900}
+.hero div em{font-style:normal;font-size:8px;opacity:.85}
+.shot{height:64px;margin:8px;border-radius:10px;overflow:hidden;box-shadow:0 2px 8px rgba(30,50,100,.12)}
+.shot img{width:100%;height:100%;object-fit:cover;object-position:50% 10%;transform:scale(1.25);transform-origin:50% 4%}
+.cardz{display:flex;gap:8px;padding:0 8px 8px}
+.cardz div{flex:1;border:1px solid ${LINE};border-radius:10px;padding:8px}
+.cardz div i{display:block;font-style:normal;font-size:7px;color:#5b6474;height:8px;width:80%;background:${SOFT};border-radius:4px}
+.cardz div i + i{margin-top:5px;width:55%}
+.cardz div:nth-child(1){border-top:3px solid ${BLUE}}
+.cardz div:nth-child(2){border-top:3px solid ${PURPLE}}
+.rib{position:absolute;left:8px;right:8px;bottom:6px;height:20px;border-radius:10px;background:rgba(255,255,255,.92);box-shadow:0 2px 8px rgba(40,55,95,.12);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;color:#11131a;z-index:2}
+.rib b{color:${TEAL}}
 `;
+  const LB = L.title || "AGENT", LR = L.role || "the back end";
+  let siteSrc = S.siteImg || "";
+  try { const _b = readFileSync(S.siteImg); siteSrc = "data:image/png;base64," + _b.toString("base64"); } catch (e) {}
+
+  const RB = Rc.title || "HUMAN", RR = Rc.role || "the front end";
   counterJs = `<script>
 const t0 = performance.now();
 const D = ${D};
-const B = ${JSON.stringify(S.beats || [1.4, 2.8, 4.2, 5.4])};
-const R = ${JSON.stringify(M.ribbons || ["you, together", "agent + human", "front + back"])};
-const ribEl = document.getElementById("rib");
+const B = ${JSON.stringify(S.beats || [1.5, 3.0, 4.5, 5.5])};
+const R = ${JSON.stringify((M.ribbons || ["you, together", "agent + human", "front + back"]).slice(0, 3))};
+const rib = document.getElementById("rib"), pg = document.getElementById("pg");
 const inr = (a, b, t) => t >= a && t < b;
 function tick(){
   const t = ((performance.now() - t0) / 1000) % D;
-  let idx = 0;
-  for (let i = 0; i < B.length; i++) if (t >= B[i]) idx = (i + 1) % R.length;
-  if (R[idx] && ribEl) ribEl.innerHTML = \`\${R[idx].split("+").join("<b>+</b>")}\`;
+  let idx = 0; for (let i = 0; i < B.length; i++) if (t >= B[i]) idx = (i + 1) % R.length;
+  if (rib) rib.innerHTML = R[idx].split("+").map((x, i) => i ? "<b>+</b>" + x : x).join("");
+  if (pg) { const s = t > 2.2 && t < 5.2 ? -14 : 0; pg.style.transform = "translateY(" + s + "px)"; }
   requestAnimationFrame(tick);
 }
 requestAnimationFrame(tick);
 </script>`;
-  let siteSrc = S.siteImg || "";
-  try { const b = readFileSync(S.siteImg); siteSrc = "data:image/png;base64," + b.toString("base64"); } catch (e) {}
   sceneHtml = `
 <div class="trailer">
   <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><div class="blob b4"></div>
   <div class="kicker">${S.kicker || "AGENT × HUMAN → ONE SITE"}</div>
-  <div class="phone pleft"><div class="island"></div><div class="screen">
-    <div class="plt">${L.title || "AGENT"}</div><div class="plr">${L.role || "the back end"}</div>
-    <div class="plc">${(L.chips || []).map(c => `<span>${c}</span>`).join("")}</div>
-    <div class="dots"><i></i><i></i><i></i></div>
+  <div class="phone pleft"><div class="screen"><div class="island"></div>
+    <div class="phead"><div class="tt">${LB}</div><div class="role">${LR}</div></div>
+    <div class="plist"><div><span></span></div><div><span></span></div><div><span></span></div></div>
+    <div class="plb"><i></i><i></i><i></i></div>
+    <div class="home"></div>
   </div></div>
-  <div class="phone pmid"><div class="screen">
-    <div class="browser"><div class="bar"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i><div class="url">${S.siteUrl || "zainkhan.me"}</div></div>
-      <div class="site"><img src="${siteSrc}" alt=""></div>
-      <div class="rib" id="rib">you, together</div>
+  <div class="phone pmid"><div class="screen"><div class="island"></div><div class="bar">
+    <i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i>
+    <div class="url">${S.siteUrl || "zainkhan.me"}</div></div>
+    <div class="page" id="pg">
+      <div class="hero"><div><i>zain khan</i><em>AI · agents · the open person company</em></div></div>
+      <div class="shot"><img src="${siteSrc}" alt=""></div>
+      <div class="cardz"><div><i></i><i></i></div><div><i></i><i></i></div></div>
     </div>
+    <div class="rib" id="rib">you, together</div>
+    <div class="home"></div>
   </div></div>
-  <div class="phone pright"><div class="island"></div><div class="screen">
-    <div class="prt">${Rc.title || "HUMAN"}</div><div class="prr">${Rc.role || "the front end"}</div>
-    <div class="prc">${(Rc.chips || []).map(c => `<span>${c}</span>`).join("")}</div>
-    <div class="cursor"><i></i></div>
+  <div class="phone pright"><div class="screen"><div class="island"></div>
+    <div class="phead"><div class="tt">${RB}</div><div class="role">${RR}</div></div>
+    <div class="plist"><div><span></span></div><div><span></span></div><div><span></span></div></div>
+    <div class="prb"><i></i></div>
+    <div class="home"></div>
   </div></div>
 </div>`;
-} else if (S.mode === "canvas") {} else if (S.mode === "canvas") {
+} else if (S.mode === "canvas") {} else if (S.mode === "canvas") {} else if (S.mode === "canvas") {
   // ── canvas mode: rich single frame, many elements animating at once ─────
   // (reference style: soft pastel gradient stays static; chips, pills, hero
   // counter, equalizer bars and ambient dots all move in place continuously)
