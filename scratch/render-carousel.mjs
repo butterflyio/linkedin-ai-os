@@ -29,10 +29,10 @@ function slideHtml(sl) {
       img = `<div class="bgimg" style="background-image:url(data:image/png;base64,${readFileSync(p).toString("base64")});background-size:cover;background-position:center"></div>`;
     } catch (e) {}
   }
-  const fit = (txt, cap) => Math.max(18, Math.min(cap || 96, Math.floor(880 / (Math.max(1, (txt || "").length) * 0.52))));
-  const kF = fit(sl.kicker, sl.kSize || 46);
-  const hF = fit(sl.headline, sl.hSize || 96);
-  const sF = fit(sl.sub, sl.subSize || 36);
+  const fit = (txt, cap) => Math.max(18, Math.min(cap || 72, Math.floor(880 / (Math.max(1, (txt || "").length) * 0.52))));
+  const kF = fit(sl.kicker, sl.kSize || 44);
+  const hF = fit(sl.headline, sl.hSize || 72);
+  const sF = fit(sl.sub, sl.subSize || 34);
   const hStyle = sl.underline ? ";border-bottom:3px solid #fff;padding-bottom:8px;display:inline-block" : "";
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -41,7 +41,7 @@ body{width:${W}px;height:${H}px;overflow:hidden;font-family:-apple-system,'Segoe
 .bgimg{position:absolute;inset:0}
 .grain{position:absolute;inset:0;background:radial-gradient(90% 70% at 50% 34%,rgba(255,255,255,.07),transparent 62%)}
 .scrim{position:absolute;inset:0;background:radial-gradient(120% 130% at 50% 50%,transparent 26%,rgba(0,0,0,.35) 70%,rgba(0,0,0,.66) 100%)}
-.text{position:absolute;${align === "right" ? "right:66px;text-align:right" : "left:66px;right:66px;text-align:center"};top:48%;transform:translateY(-50%);color:#fff;max-width:880px}
+.text{position:absolute;${align === "right" ? "right:66px;text-align:right" : "left:66px;right:66px;text-align:center"};top:${sl.posTop || 48}%;transform:translateY(-50%);color:#fff;max-width:880px}
 .k{white-space:nowrap;font-size:${kF}px;font-weight:600;opacity:.92}
 .h{white-space:nowrap;font-size:${hF}px;font-weight:800;letter-spacing:-.02em;line-height:1.06;margin-top:18px}
 .sub{white-space:nowrap;font-size:${sF}px;font-weight:400;opacity:.86;margin-top:26px;line-height:1.3;font-style:italic}
