@@ -32,7 +32,7 @@ It solved the physical problem.
 But it had a new one.
 I was the product.
 Every hour of growth was an hour of my life.
-There was no leverage.
+There was no multiplier.
 
 Today things are different.
 I run a few businesses.
