@@ -2,51 +2,40 @@
   "slides": [
     {
       "kicker": "This time last year",
-      "kSize": 46,
-      "headline": "I always wanted to build things",
-      "hSize": 64,
-      "sub": "(websites, marketing, big ideas. too many strings to pull.)",
+      "headline": "I wanted to build websites",
+      "sub": "for personal branding. for your company. agentically driven.",
       "align": "right",
       "mood": ["#14161d", "#2a2436"],
       "img": ""
     },
     {
       "kicker": "For years I hit the same wall",
-      "kSize": 46,
-      "headline": "Team was too expensive to manage",
-      "hSize": 58,
-      "sub": "My previous businesses gave me experiences.",
+      "headline": "I did not know how to code",
+      "sub": "Hiring agencies was too expensive.",
       "align": "center",
       "mood": ["#171513", "#2a2317"],
       "img": ""
     },
     {
-      "kicker": "Then AI showed up",
-      "kSize": 46,
-      "headline": "One agent builds. Now you orchestrate.",
-      "hSize": 52,
-      "sub": "A dedicated agentic swarm does the heavy lifting while you orchestrate.",
+      "kicker": "Then agentic AI caught up",
+      "headline": "Now you orchestrate",
+      "sub": "A dedicated agentic swarm does the heavy lifting.",
       "align": "center",
       "mood": ["#101826", "#1f2438"],
       "img": ""
     },
     {
-      "kicker": "In 2026",
-      "kSize": 46,
-      "headline": "You are in control",
-      "hSize": 92,
-      "underline": true,
-      "sub": "You can build anything.",
+      "kicker": "We are at the end of 2026",
+      "headline": "I have now built five websites",
+      "sub": "and I can help you with your personal branding too",
       "align": "center",
       "mood": ["#0e1410", "#1c2a20"],
       "img": ""
     },
     {
       "kicker": "Reach out",
-      "kSize": 46,
-      "headline": "For all your marketing solutions",
-      "hSize": 68,
-      "sub": "I help marketing teams and founders solve problems in specific industries.",
+      "headline": "I'll build your personal branding website",
+      "sub": "agentically driven. run all your social media content from that.",
       "align": "center",
       "mood": ["#161a2a", "#20263c"],
       "img": ""
