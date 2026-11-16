@@ -57,5 +57,11 @@
       "img": "carousel-imgs/IMG_0651.png",
       "bw": true
     }
-  ]
+  ],
+  "_meta": {
+    "style": "Founder Frames",
+    "slides": 5,
+    "aspect": "9:16 (1080x1350)",
+    "type": "carousel"
+  }
 }
