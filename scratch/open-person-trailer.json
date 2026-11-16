@@ -45,5 +45,6 @@
     "left": "assets/videos/ok/mixkit-code9757-p.png",
     "mid": "assets/videos/ok/coverr-journey-p.png",
     "right": "assets/videos/ok/coverr-confident-p.png"
-  }
+  },
+  "layout": "phones"
 }

@@ -204,15 +204,42 @@ requestAnimationFrame(tick);
 <div class="doodle d2" style="left:-110px;bottom:-90px"></div>
 </div>`;
 } else if (S.mode === "trailer") {
-  // Trailer v6 - "YOU ARE IN CONTROL": clean phones, Ken-Burns motion on
-  // the clip posters (headless can't play <video> frames), minimal copy.
+  // Trailer v7 - REAL video in the screens (captured via CDP screencast so the
+  // clips actually play), in two layouts: three phones OR a single laptop.
   const D = S.duration || 6.0;
+  const INK = "#10121a", BLUE = "#0667d2";
   const L = S.left || {}, Rc = S.right || {};
-  const INK = "#10121a", BLUE = "#0667d2", PURPLE = "#6a3fd1";
-  const dataOf = (f) => { try { return "data:image/png;base64," + readFileSync(f).toString("base64"); } catch (e) { return ""; } };
-  const posters = { left: dataOf(S.posters?.left || ""), mid: dataOf(S.posters?.mid || ""), right: dataOf(S.posters?.right || "") };
-  const pos = { left: "object-position:50% 50%", mid: "object-position:50% 18%", right: "object-position:50% 26%" };
-  css = `
+  const vdata = {};
+  for (const _k of ["left", "right", "mid"]) {
+    const _f = S.videos && S.videos[_k];
+    if (_f) { try { const _v = readFileSync(_f); vdata[_k] = (_f.endsWith(".webm") ? "data:video/webm;base64," : "data:video/mp4;base64,") + _v.toString("base64"); } catch (e) {} }
+  }
+  const vid = (k) => vdata[k] ? `<video muted loop autoplay playsinline preload="auto" src="${vdata[k]}"></video>` : "";
+  const LAYOUT = S.layout || "phones";
+  if (LAYOUT === "laptop") {
+    css = `
+.trailer{position:absolute;inset:0;overflow:hidden;background:#ffffff;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
+.blob{position:absolute;border-radius:50%;filter:blur(16px)}
+.b1{width:400px;height:400px;left:-180px;top:-140px;background:#e3edfb}
+.b2{width:420px;height:420px;right:-190px;bottom:-160px;background:#efe8fb}
+.head{position:absolute;top:44px;left:0;right:0;text-align:center;font-size:64px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;color:${INK}}
+.head em{font-style:normal;color:${BLUE}}
+.laptop{position:absolute;left:50%;top:50%;transform:translate(-50%,-46%);width:640px;height:300px;z-index:2}
+.deck{position:absolute;left:50%;bottom:-120px;transform:translateX(-50%);width:700px;height:120px;background:linear-gradient(180deg,#e8ecf2,#c8cdd6);border-radius:10px 10px 0 0;box-shadow:0 18px 36px rgba(30,45,90,.18)}
+.deck .track{position:absolute;left:50%;top:18px;transform:translateX(-50%);width:300px;height:14px;border-radius:7px;background:#b9bfca}
+.screenwrap{position:absolute;left:50%;top:0;transform:translateX(-50%);width:640px;height:300px;background:#101216;border-radius:16px 16px 0 0;padding:12px;box-shadow:0 26px 54px rgba(30,45,90,.3)}
+.screen{position:relative;width:100%;height:100%;border-radius:6px;overflow:hidden;background:#000}
+.screen video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.stand{position:absolute;left:50%;top:12px;transform:translateX(-50%);width:26px;height:14px;background:#e9edf2}
+`;
+    sceneHtml = `
+<div class="trailer">
+  <div class="blob b1"></div><div class="blob b2"></div>
+  <div class="head">YOU <em>ARE</em> IN CONTROL</div>
+  <div class="laptop"><div class="stand"></div><div class="screenwrap"><div class="screen">${vid("mid")}</div></div><div class="deck"><div class="track"></div></div></div>
+</div>`;
+  } else {
+    css = `
 .trailer{position:absolute;inset:0;overflow:hidden;background:#ffffff;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
 .blob{position:absolute;border-radius:50%;filter:blur(14px)}
 .b1{width:340px;height:340px;left:-150px;top:-120px;background:#e3edfb}
@@ -225,48 +252,22 @@ requestAnimationFrame(tick);
 .screen{position:relative;border-radius:34px;overflow:hidden;background:#000;width:100%;height:100%}
 .island{position:absolute;top:9px;left:50%;transform:translateX(-50%);width:38%;height:13px;border-radius:7px;background:#05060a;z-index:3}
 .home{position:absolute;bottom:7px;left:50%;transform:translateX(-50%);width:34px;height:4px;border-radius:2px;background:rgba(255,255,255,.5);z-index:3}
-.kb{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;will-change:transform}
+.screen video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .pleft{width:132px;height:272px;left:70px;top:150px}
 .pmid{width:150px;height:308px;left:325px;top:132px}
 .pright{width:132px;height:272px;left:598px;top:150px}
 `;
-  counterJs = `<script>
-const t0 = performance.now();
-const D = ${D};
-const kbs = ["kbL", "kbM", "kbR"];
-const offs = [0, 2.1, 4.2];
-function tick(){
-  const t = ((performance.now() - t0) / 1000) % D;
-  kbs.forEach((id, i) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    const ph = (offs[i] + t) / D;
-    const x = (Math.sin(ph * 2 * Math.PI) - 0.5) * 16;
-    const sc = 1.14 + 0.04 * Math.sin(ph * 2 * Math.PI);
-    el.style.transform = "scale(" + sc.toFixed(3) + ") translateX(" + x.toFixed(1) + "px)";
-  });
-  requestAnimationFrame(tick);
-}
-requestAnimationFrame(tick);
-</script>`;
-  sceneHtml = `
+    sceneHtml = `
 <div class="trailer">
   <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><div class="blob b4"></div>
   <div class="head">YOU <em>ARE</em> IN CONTROL</div>
-  <div class="phone pleft"><div class="screen"><div class="island"></div>
-    ${posters.left ? `<img class="kb" id="kbL" src="${posters.left}" style="${pos.left}">` : ""}
-    <div class="home"></div>
-  </div></div>
-  <div class="phone pmid"><div class="screen"><div class="island"></div>
-    ${posters.mid ? `<img class="kb" id="kbM" src="${posters.mid}" style="${pos.mid}">` : ""}
-    <div class="home"></div>
-  </div></div>
-  <div class="phone pright"><div class="screen"><div class="island"></div>
-    ${posters.right ? `<img class="kb" id="kbR" src="${posters.right}" style="${pos.right}">` : ""}
-    <div class="home"></div>
-  </div></div>
+  <div class="phone pleft"><div class="screen"><div class="island"></div>${vid("left")}<div class="home"></div></div></div>
+  <div class="phone pmid"><div class="screen"><div class="island"></div>${vid("mid")}<div class="home"></div></div></div>
+  <div class="phone pright"><div class="screen"><div class="island"></div>${vid("right")}<div class="home"></div></div></div>
 </div>`;
-} else if (S.mode === "canvas") {} else if (S.mode === "canvas") {} else if (S.mode === "canvas") {} else if (S.mode === "canvas") {
+  }
+  counterJs = "";
+} else if (S.mode === "canvas") {} else if (S.mode === "canvas") {} else if (S.mode === "canvas") {} else if (S.mode === "canvas") {} else if (S.mode === "canvas") {
   // ── canvas mode: rich single frame, many elements animating at once ─────
   // (reference style: soft pastel gradient stays static; chips, pills, hero
   // counter, equalizer bars and ambient dots all move in place continuously)
@@ -566,12 +567,43 @@ if (S.mode === "trailer") {
     let done = 0;
     const cb = () => { if (++done >= vs.length) res(); };
     vs.forEach((v) => {
-      v.muted = true; v.defaultMuted = true; v.playsInline = true; v.pause();
+      v.muted = true; v.defaultMuted = true; v.playsInline = true;
+      v.play().catch(() => {});
       v.addEventListener("loadeddata", cb, { once: true });
       setTimeout(cb, 10000);
     });
   }));
 }
+if (S.mode === "trailer") {
+  // REAL-VIDEO path: CDP screencast records the live compositor (videos play).
+  mkdirSync("frames-screencast", { recursive: true });
+  const cp = await page.createCDPSession();
+  const sf = [];
+  cp.on("Page.screencastFrame", async (ev) => {
+    sf.push(Buffer.from(ev.data, "base64"));
+    try { await cp.send("Page.screencastFrameAck", { sessionId: ev.sessionId }); } catch (e) {}
+  });
+  const sc0 = Date.now();
+  await cp.send("Page.startScreencast", { format: "jpeg", quality: 82, everyNthFrame: 1 });
+  await new Promise((r) => setTimeout(r, (DURATION + 1.1) * 1000));
+  await cp.send("Page.stopScreencast");
+  const elapsed = (Date.now() - sc0) / 1000;
+  console.log(`screencast: ${sf.length} frames in ${elapsed.toFixed(1)}s`);
+  if (sf.length) {
+    sf.forEach((buf, i) => require("node:fs").writeFileSync(`frames-screencast/f_${String(i).padStart(4, "0")}.jpg`, buf));
+    const fps = Math.max(4, Math.round(sf.length / elapsed));
+    if (posterPath) copyFileSync(`frames-screencast/f_${String(Math.floor(sf.length / 2)).padStart(4, "0")}.jpg`, posterPath);
+    const cmd = `ffmpeg -y -framerate ${fps} -i frames-screencast/f_%04d.jpg -vf "fps=12,scale=640:360:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=192[p];[s1][p]paletteuse=dither=bayer:bayer_scale=4" -loop 0 ${outGif}`;
+    execSync(cmd, { stdio: ["ignore", "pipe", "inherit"] });
+    rmSync("frames-screencast", { recursive: true, force: true });
+    console.log("GIF saved:", outGif);
+  } else {
+    console.log("screencast produced no frames");
+  }
+  await browser.close();
+  process.exit(0);
+}
+
 await new Promise((r) => setTimeout(r, 400));
 
 if (args.includes("--dump-html")) { await browser.close(); process.stdout.write(html); process.exit(0); }

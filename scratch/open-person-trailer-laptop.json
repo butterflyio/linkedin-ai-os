@@ -1,0 +1,50 @@
+{
+  "mode": "trailer",
+  "size": [
+    800,
+    450
+  ],
+  "fps": 10,
+  "duration": 6.0,
+  "kicker": "YOU ARE IN CONTROL",
+  "siteImg": "assets/site-zainkhan.png",
+  "siteUrl": "zainkhan.me",
+  "left": {
+    "title": "AGENT",
+    "role": "the builder",
+    "chips": [
+      "api",
+      "logic",
+      "data"
+    ]
+  },
+  "right": {
+    "title": "YOU",
+    "role": "the orchestrator",
+    "chips": [
+      "decide",
+      "aim",
+      "ship"
+    ]
+  },
+  "mid": {
+    "ribbons": []
+  },
+  "beats": [
+    1.4,
+    2.8,
+    4.2,
+    5.4
+  ],
+  "videos": {
+    "left": "assets/videos/ok/mixkit-code9757.mp4",
+    "mid": "assets/videos/ok/coverr-journey.mp4",
+    "right": "assets/videos/ok/coverr-confident.mp4"
+  },
+  "posters": {
+    "left": "assets/videos/ok/mixkit-code9757-p.png",
+    "mid": "assets/videos/ok/coverr-journey-p.png",
+    "right": "assets/videos/ok/coverr-confident-p.png"
+  },
+  "layout": "laptop"
+}
