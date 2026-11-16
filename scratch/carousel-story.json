@@ -9,7 +9,7 @@
         "#14161d",
         "#2a2436"
       ],
-      "img": ""
+      "img": "carousel-imgs/c1.png"
     },
     {
       "kicker": "For years I hit the same wall",
@@ -20,7 +20,7 @@
         "#171513",
         "#2a2317"
       ],
-      "img": ""
+      "img": "carousel-imgs/c2.png"
     },
     {
       "kicker": "Then agentic AI caught up",
@@ -31,7 +31,7 @@
         "#101826",
         "#1f2438"
       ],
-      "img": ""
+      "img": "carousel-imgs/c3.png"
     },
     {
       "kicker": "We are at the end of 2026",
@@ -42,7 +42,7 @@
         "#0e1410",
         "#1c2a20"
       ],
-      "img": "",
+      "img": "carousel-imgs/c4.png",
       "posTop": 60
     },
     {
@@ -54,7 +54,7 @@
         "#161a2a",
         "#20263c"
       ],
-      "img": ""
+      "img": "carousel-imgs/c5.png"
     }
   ]
 }
