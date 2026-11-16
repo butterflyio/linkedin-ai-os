@@ -2,26 +2,22 @@
   "mode": "trailer",
   "size": [800, 450],
   "fps": 10,
-  "duration": 5.3,
-  "backdrop": "linear-gradient(180deg,#86aee8 0%,#a3c5ea 36%,#dce9f6 58%,#c2ddb2 82%,#93bd7f 100%)",
-  "accentHot": "#e6007e",
-  "accentSoft": "#f8b3df",
-  "white": "#ffffff",
-  "ink": "#ffffff",
-  "cardTitle": ["THE OPEN PERSON", "COMPANY."],
-  "episode": "POST 01 · IDEA → GATE",
-  "centerSlides": [
-    { "label": "HUMAN", "sub": "judgment stays human" },
-    { "label": "AGENT", "sub": "the stack ships it" }
-  ],
-  "leftPanels": [
-    { "g": "✦", "text": "idea" },
-    { "g": "✓", "text": "gate" }
-  ],
-  "rightPanels": [
-    { "text": "hook" },
-    { "text": "post" },
-    { "text": "buffer" }
-  ],
-  "beats": [1.2, 2.3, 3.5, 4.6]
+  "duration": 6.0,
+  "kicker": "AGENT × HUMAN → ONE SITE",
+  "siteImg": "assets/site-zainkhan.png",
+  "siteUrl": "zainkhan.me",
+  "left": {
+    "title": "AGENT",
+    "role": "the back end",
+    "chips": ["api", "logic", "data"]
+  },
+  "right": {
+    "title": "HUMAN",
+    "role": "the front end",
+    "chips": ["design", "copy", "taste"]
+  },
+  "mid": {
+    "ribbons": ["you, together", "agent + human", "front + back"]
+  },
+  "beats": [1.4, 2.8, 4.2, 5.4]
 }

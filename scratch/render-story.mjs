@@ -204,94 +204,91 @@ requestAnimationFrame(tick);
 <div class="doodle d2" style="left:-110px;bottom:-90px"></div>
 </div>`;
 } else if (S.mode === "trailer") {
-  // ── trailer mode: 3-phone cinematic teaser (16:9), seamless loop ───────
-  // replicates the '3 floating iPhones + flickering brand card' LinkedIn GIF
-  // structure; center phone hard-cuts between two slides, card colour-flips
-  // between soft/hot variants, wrap returns to the frame-0 state.
+  // Trailer v2 - 'agent x human -> one site' on a clean white stage.
+  // Left phone: the AGENT (back end). Right phone: the HUMAN (front end).
+  // Middle: a browser showing a REAL site ([siteImg]) = the thing they built
+  // together. Everything stays inside its phone (contained, subtle motion).
   const [W, H] = S.size;
-  const D = S.duration || 5.3;
-  const tw = (b) => ((b / D) * 100).toFixed(2);
-  const be = S.beats || [1.2, 2.3, 3.5, 4.6];
-  const [b0, b1, b2, b3] = [tw(be[0]), tw(be[1]), tw(be[2]), tw(be[3])];
-  // Slash-stepped keyframes: hard cuts on the beat grid; timeline wraps so the
-  // final state equals the frame-0 state (seamless loop).
-  const slideA = `@keyframes sA { 0%{opacity:1} ${b0}%{opacity:1} ${tw(be[0] + 0.02)}%{opacity:0} ${b1}%{opacity:0} ${tw(be[1] + 0.02)}%{opacity:1} ${b2}%{opacity:1} ${tw(be[2] + 0.02)}%{opacity:0} ${b3}%{opacity:0} ${tw(be[3] + 0.02)}%{opacity:1} 100%{opacity:1} }`;
-  const slideB = `@keyframes sB { 0%{opacity:0} ${b0}%{opacity:0} ${tw(be[0] + 0.02)}%{opacity:1} ${b1}%{opacity:1} ${tw(be[1] + 0.02)}%{opacity:0} ${b2}%{opacity:0} ${tw(be[2] + 0.02)}%{opacity:1} ${b3}%{opacity:1} ${tw(be[3] + 0.02)}%{opacity:0} 100%{opacity:0} }`;
-  const card = `@keyframes cd { 0%{background:${S.accentSoft};transform:translateY(0)} ${b0}%{background:${S.accentSoft};transform:translateY(0)} ${tw(be[0] + 0.02)}%{background:${S.accentHot};transform:translateY(-34px)} ${b1}%{background:${S.accentHot};transform:translateY(-34px)} ${tw(be[1] + 0.02)}%{background:${S.accentSoft};transform:translateY(0)} ${b2}%{background:${S.accentSoft};transform:translateY(0)} ${tw(be[2] + 0.02)}%{background:${S.accentHot};transform:translateY(-34px)} ${b3}%{background:${S.accentHot};transform:translateY(-34px)} ${tw(be[3] + 0.02)}%{background:${S.accentSoft};transform:translateY(0)} 100%{background:${S.accentSoft};transform:translateY(0)} }`;
-
+  const D = S.duration || 6.0;
+  const L = S.left || {}, Rc = S.right || {}, M = S.mid || {};
   css = `
-.trailer{position:absolute;inset:0;overflow:hidden;background:${S.backdrop};font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
-.light1{position:absolute;left:-120px;top:-140px;width:300px;height:620px;background:linear-gradient(180deg,rgba(255,255,255,.30),rgba(255,255,255,0));transform:rotate(24deg)}
-.light2{position:absolute;right:-80px;top:-120px;width:280px;height:560px;background:linear-gradient(180deg,rgba(255,255,255,.22),rgba(255,255,255,0));transform:rotate(-22deg)}
-.blob{position:absolute;border-radius:50%;background:rgba(255,255,255,.25)}
-.phone{position:absolute;background:#101114;border-radius:30px;padding:7px;box-shadow:0 18px 44px rgba(10,10,20,.45);z-index:2}
-.phone .island{width:38%;height:7px;border-radius:4px;background:#000;margin:4px auto 0}
-.screen{position:relative;border-radius:24px;overflow:hidden;background:#15151a;width:100%;height:100%}
-.phone .pcap{position:relative}
-.left{width:118px;height:244px;left:66px;top:180px}
-.center{width:156px;height:322px;left:316px;top:92px}
-.right{width:118px;height:244px;left:568px;top:186px;z-index:1}
-.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
-.sA{background:radial-gradient(circle at 30% 20%,#41536e,#1c2537)}
-.sB{background:radial-gradient(circle at 72% 24%,#6b2c4e,#2b1124)}
-.slide .big{font-size:34px;font-weight:900;font-style:italic;text-transform:uppercase;color:#fff;letter-spacing:.02em}
-.slide .sub{font-size:12px;font-weight:600;color:rgba(255,255,255,.78);margin-top:6px}
-.mini{position:absolute;left:8px;right:8px;height:58px;border-radius:10px;background:#20222a;display:flex;align-items:center;justify-content:center;color:#fff}
-.mini b{font-size:18px;margin-right:6px;color:${S.accentSoft}}
-.m1{top:56px} .m2{top:122px}
-.tcard{position:absolute;left:6px;right:6px;bottom:6px;border-radius:12px;background:${S.accentSoft};color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 4px;box-shadow:0 8px 22px rgba(0,0,0,.35)}
-.tcard .tt{font-size:15px;font-weight:900;font-style:italic;text-transform:uppercase;letter-spacing:.02em}
-.tcard .ep{font-size:8px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;opacity:.85}
-.tcardwrap{position:absolute;left:0;right:0;top:0;bottom:0}
-.miniR{position:absolute;left:9px;right:9px;height:58px;border-radius:10px;background:#20222a;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
-.r1{top:56px} .r2{top:122px} .r3{top:188px}
-.vig{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 42%,rgba(0,0,0,0),rgba(0,0,0,.28))}
+.trailer{position:absolute;inset:0;overflow:hidden;background:#ffffff;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
+.blob{position:absolute;border-radius:50%;filter:blur(8px)}
+.b1{width:300px;height:300px;left:-120px;top:-120px;background:#e8effb}
+.b2{width:340px;height:340px;right:-140px;top:-100px;background:#f1e9fb}
+.b3{width:260px;height:260px;left:-40px;bottom:-120px;background:#e7f4ec}
+.b4{width:280px;height:280px;right:-60px;bottom:-130px;background:#ffeef2}
+.kicker{position:absolute;top:34px;left:0;right:0;text-align:center;font-size:19px;font-weight:800;letter-spacing:.24em;text-transform:uppercase;color:#3b4252}
+.phone{position:absolute;border-radius:30px;box-shadow:0 18px 44px rgba(30,40,80,.18);z-index:2}
+.phone .island{width:36%;height:7px;border-radius:4px;background:#000;margin:5px auto 0}
+.screen{position:relative;border-radius:24px;overflow:hidden;width:100%;height:100%}
+.pleft{width:128px;height:262px;left:74px;top:150px;background:#101114}
+.plt{position:absolute;top:50px;left:0;right:0;text-align:center;font-size:13px;font-weight:900;letter-spacing:.18em;color:#fff}
+.plr{position:absolute;top:68px;left:0;right:0;text-align:center;font-size:9px;color:rgba(255,255,255,.6);letter-spacing:.06em}
+.plc{position:absolute;left:14px;right:14px;top:92px;display:flex;flex-direction:column;gap:7px}
+.plc span{background:#1d2029;border:1px solid #2b2f3a;color:#cdd3e0;border-radius:8px;font-size:10px;font-weight:700;text-align:center;padding:6px 0}
+.dots{position:absolute;left:0;right:0;bottom:26px;display:flex;justify-content:center;gap:6px}
+.dots i{width:7px;height:7px;border-radius:50%;background:${S.accentHot || "#e6007e"};display:block;animation:dot 1.4s ease-in-out infinite}
+.dots i:nth-child(2){animation-delay:.2s}.dots i:nth-child(3){animation-delay:.4s}
+@keyframes dot{0%,100%{opacity:.25;transform:translateY(0)}45%{opacity:1;transform:translateY(-3px)}}
+.pright{width:128px;height:262px;left:598px;top:150px;background:#ffffff;border:2px solid #e4e8ef}
+.prt{position:absolute;top:50px;left:0;right:0;text-align:center;font-size:13px;font-weight:900;letter-spacing:.18em;color:#1c1e26}
+.prr{position:absolute;top:68px;left:0;right:0;text-align:center;font-size:9px;color:#7b8293;letter-spacing:.06em}
+.prc{position:absolute;left:14px;right:14px;top:92px;display:flex;flex-direction:column;gap:7px}
+.prc span{background:#f6f8fb;border:1px solid #e4e8ef;color:#31405c;border-radius:8px;font-size:10px;font-weight:700;text-align:center;padding:6px 0}
+.cursor{position:absolute;left:0;right:0;bottom:26px;text-align:center}
+.cursor i{display:inline-block;width:6px;height:14px;background:#e6007e;animation:cur 1s steps(1) infinite}
+@keyframes cur{0%,49%{opacity:1}50%,100%{opacity:0}}
+.pmid{width:160px;height:336px;left:318px;top:82px;background:#ffffff;border:2px solid #e4e8ef;border-radius:32px;z-index:3}
+.browser{position:absolute;inset:6px;background:#fff;border-radius:26px;overflow:hidden;border:1px solid #eef1f5}
+.bar{display:flex;align-items:center;gap:6px;height:30px;padding:0 10px;background:#f8fafc;border-bottom:1px solid #eef1f5}
+.bar i{width:8px;height:8px;border-radius:50%}
+.bar .url{flex:1;height:16px;border-radius:8px;background:#eef1f5;font-size:8px;line-height:16px;color:#6b7280;padding:0 8px}
+.site{position:absolute;left:0;right:0;top:30px;bottom:34px}
+.site img{width:100%;height:100%;object-fit:cover;transform:scale(1.6);transform-origin:50% 6%}
+.rib{position:absolute;left:8px;right:8px;bottom:7px;height:22px;border-radius:11px;background:rgba(255,255,255,.86);box-shadow:0 2px 8px rgba(40,50,90,.14);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#11131a;letter-spacing:.08em}
+.rib b{color:${S.accentHot || "#e6007e"}}
 `;
-
-  const slides = S.centerSlides || [];
-  sceneHtml = `
-<div class="trailer">
-  <div class="light1"></div><div class="light2"></div>
-  <div class="blob" style="width:190px;height:190px;left:150px;bottom:-70px"></div>
-  <div class="blob" style="width:130px;height:130px;right:180px;bottom:60px;background:rgba(255,255,255,.16)"></div>
-  <div class="phone left"><div class="island"></div><div class="screen">
-    <div class="mini m1"><b>✦</b>idea</div>
-    <div class="mini m2"><b>✓</b>gate</div>
-    <div class="tcardwrap"><div class="tcard" id="tcard"><div class="tt">THE OPEN PERSON</div><div class="tt">COMPANY.</div><div class="ep">POST 01 · HOOK → GATE → PUBLISH</div></div></div>
-  </div></div>
-  <div class="phone center"><div class="island"></div><div class="screen">
-    <div class="slide sA" id="slA"><div class="big">${slides[0]?.label || "HUMAN"}</div><div class="sub">${slides[0]?.sub || ""}</div></div>
-    <div class="slide sB" id="slB"><div class="big">${slides[1]?.label || "AGENT"}</div><div class="sub">${slides[1]?.sub || ""}</div></div>
-  </div></div>
-  <div class="phone right"><div class="island"></div><div class="screen">
-    <div class="miniR r1">hook</div>
-    <div class="miniR r2">post</div>
-    <div class="miniR r3">buffer</div>
-  </div></div>
-  <div class="vig"></div>
-</div>`;
-  counterJs = "";
-
-counterJs = `<script>
+  counterJs = `<script>
 const t0 = performance.now();
-const B = ${JSON.stringify(S.beats || [1.2, 2.3, 3.5, 4.6])};
 const D = ${D};
-const A = document.getElementById("slA"), C = document.getElementById("slB"), Q = document.getElementById("tcard");
-const SOFT = "${S.accentSoft}", HOT = "${S.accentHot}";
-function inr(a,b,t){ return t >= a && t < b; }
+const B = ${JSON.stringify(S.beats || [1.4, 2.8, 4.2, 5.4])};
+const R = ${JSON.stringify(M.ribbons || ["you, together", "agent + human", "front + back"])};
+const ribEl = document.getElementById("rib");
+const inr = (a, b, t) => t >= a && t < b;
 function tick(){
   const t = ((performance.now() - t0) / 1000) % D;
-  const aOn = inr(0,B[0],t) || inr(B[1],B[2],t) || inr(B[3],D,t);
-  const hot = inr(B[0],B[1],t) || inr(B[2],B[3],t);
-  A.style.opacity  = aOn ? 1 : 0;
-  C.style.opacity  = aOn ? 0 : 1;
-  Q.style.background = hot ? HOT : SOFT;
-  Q.style.transform  = hot ? "translateY(-34px)" : "translateY(0)";
+  let idx = 0;
+  for (let i = 0; i < B.length; i++) if (t >= B[i]) idx = (i + 1) % R.length;
+  if (R[idx] && ribEl) ribEl.innerHTML = \`\${R[idx].split("+").join("<b>+</b>")}\`;
   requestAnimationFrame(tick);
 }
 requestAnimationFrame(tick);
 </script>`;
-} else if (S.mode === "canvas") {
+  let siteSrc = S.siteImg || "";
+  try { const b = readFileSync(S.siteImg); siteSrc = "data:image/png;base64," + b.toString("base64"); } catch (e) {}
+  sceneHtml = `
+<div class="trailer">
+  <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><div class="blob b4"></div>
+  <div class="kicker">${S.kicker || "AGENT × HUMAN → ONE SITE"}</div>
+  <div class="phone pleft"><div class="island"></div><div class="screen">
+    <div class="plt">${L.title || "AGENT"}</div><div class="plr">${L.role || "the back end"}</div>
+    <div class="plc">${(L.chips || []).map(c => `<span>${c}</span>`).join("")}</div>
+    <div class="dots"><i></i><i></i><i></i></div>
+  </div></div>
+  <div class="phone pmid"><div class="screen">
+    <div class="browser"><div class="bar"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i><div class="url">${S.siteUrl || "zainkhan.me"}</div></div>
+      <div class="site"><img src="${siteSrc}" alt=""></div>
+      <div class="rib" id="rib">you, together</div>
+    </div>
+  </div></div>
+  <div class="phone pright"><div class="island"></div><div class="screen">
+    <div class="prt">${Rc.title || "HUMAN"}</div><div class="prr">${Rc.role || "the front end"}</div>
+    <div class="prc">${(Rc.chips || []).map(c => `<span>${c}</span>`).join("")}</div>
+    <div class="cursor"><i></i></div>
+  </div></div>
+</div>`;
+} else if (S.mode === "canvas") {} else if (S.mode === "canvas") {
   // ── canvas mode: rich single frame, many elements animating at once ─────
   // (reference style: soft pastel gradient stays static; chips, pills, hero
   // counter, equalizer bars and ambient dots all move in place continuously)
