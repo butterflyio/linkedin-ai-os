@@ -222,21 +222,22 @@ requestAnimationFrame(tick);
 .blob{position:absolute;border-radius:50%;filter:blur(16px)}
 .b1{width:400px;height:400px;left:-180px;top:-140px;background:#e3edfb}
 .b2{width:420px;height:420px;right:-190px;bottom:-160px;background:#efe8fb}
-.head{position:absolute;top:44px;left:0;right:0;text-align:center;font-size:64px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;color:${INK}}
+.head{position:absolute;top:52px;left:0;right:0;text-align:center;font-size:40px;font-weight:900;letter-spacing:.18em;text-transform:uppercase;color:${INK}}
 .head em{font-style:normal;color:${BLUE}}
-.laptop{position:absolute;left:50%;top:50%;transform:translate(-50%,-46%);width:640px;height:300px;z-index:2}
-.deck{position:absolute;left:50%;bottom:-120px;transform:translateX(-50%);width:700px;height:120px;background:linear-gradient(180deg,#e8ecf2,#c8cdd6);border-radius:10px 10px 0 0;box-shadow:0 18px 36px rgba(30,45,90,.18)}
-.deck .track{position:absolute;left:50%;top:18px;transform:translateX(-50%);width:300px;height:14px;border-radius:7px;background:#b9bfca}
-.screenwrap{position:absolute;left:50%;top:0;transform:translateX(-50%);width:640px;height:300px;background:#101216;border-radius:16px 16px 0 0;padding:12px;box-shadow:0 26px 54px rgba(30,45,90,.3)}
-.screen{position:relative;width:100%;height:100%;border-radius:6px;overflow:hidden;background:#000}
+.laptop{position:absolute;left:50%;top:50%;transform:translate(-50%,-48%);width:600px;height:286px;z-index:2}
+.deck{position:absolute;left:50%;bottom:-104px;transform:translateX(-50%);width:660px;height:104px;background:linear-gradient(180deg,#e9edf3,#cbd0d9);border-radius:10px 10px 0 0;box-shadow:0 16px 34px rgba(30,45,90,.16)}
+.deck .track{position:absolute;left:50%;top:16px;transform:translateX(-50%);width:280px;height:12px;border-radius:6px;background:#bcc2cd}
+.screenwrap{position:absolute;left:50%;top:0;transform:translateX(-50%);width:600px;height:286px;background:#101216;border-radius:14px 14px 0 0;padding:11px;box-shadow:0 24px 50px rgba(30,45,90,.26)}
+.screen{position:relative;width:100%;height:100%;border-radius:5px;overflow:hidden;background:#000}
 .screen video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.stand{position:absolute;left:50%;top:12px;transform:translateX(-50%);width:26px;height:14px;background:#e9edf2}
+.msg{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);background:rgba(10,12,20,.55);color:#fff;font-size:15px;font-weight:800;letter-spacing:.06em;padding:7px 16px;border-radius:999px;white-space:nowrap}
+.stand{position:absolute;left:50%;top:10px;transform:translateX(-50%);width:24px;height:12px;background:#e9edf2}
 `;
     sceneHtml = `
 <div class="trailer">
   <div class="blob b1"></div><div class="blob b2"></div>
   <div class="head">YOU <em>ARE</em> IN CONTROL</div>
-  <div class="laptop"><div class="stand"></div><div class="screenwrap"><div class="screen">${vid("mid")}</div></div><div class="deck"><div class="track"></div></div></div>
+  <div class="laptop"><div class="stand"></div><div class="screenwrap"><div class="screen">${vid("mid")}<div class="msg">BE IN CONTROL OF YOURSELF · AND EVERYTHING</div></div></div><div class="deck"><div class="track"></div></div></div>
 </div>`;
   } else {
     css = `
