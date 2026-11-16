@@ -51,27 +51,27 @@ body{width:${W}px;height:${H}px;overflow:hidden;font-family:-apple-system,'Segoe
 .sub{position:absolute;left:64px;top:196px;font-size:24px;color:#4a4f57;max-width:880px}
 .timer{position:absolute;right:66px;top:150px;font-size:120px;font-weight:900;color:#e5e7ea;line-height:1}
 .timer b{color:#2F7BF6;font-weight:900}
-.step{position:absolute;left:64px;width:640px;height:140px;opacity:.16;transition:opacity .35s ease}
+.step{position:absolute;left:40px;width:640px;height:140px;opacity:.16;transition:opacity .35s ease}
 .step.active{opacity:1}
-.step .rail{position:absolute;left:0;top:0;width:64px}
-.step .chip{width:56px;height:56px;border-radius:16px;background:#fff;border:2px solid #cfd5dd;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:22px;color:#0b0b0c}
+.step .rail{position:absolute;left:8px;top:0;width:64px}
+.step .chip{width:52px;height:52px;border-radius:16px;background:#fff;border:2px solid #cfd5dd;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:22px;color:#0b0b0c}
 .step .rail .dot{position:absolute;left:24px;top:64px;width:8px;height:8px;border-radius:50%;background:#cfd5dd}
 .step.active .chip{border-color:#2F7BF6;color:#2F7BF6;box-shadow:0 0 0 5px rgba(47,123,246,.10)}
-.step .card{position:absolute;left:84px;top:0;width:540px;border:1.5px solid #eae9e4;border-radius:16px;background:#fff;padding:16px 20px;box-shadow:0 10px 24px rgba(20,25,45,.05)}
+.step .card{position:absolute;left:150px;top:0;width:520px;border:1.5px solid #eae9e4;border-radius:16px;background:#fff;padding:16px 20px;box-shadow:0 10px 24px rgba(20,25,45,.05)}
 .step .ct{font-size:28px;font-weight:800;color:#1c1e26}
 .step.active .ct{color:#0b0b0c}
 .step .pt{font-size:19px;color:#3c414b;margin-top:6px}
 .step .pt:before{content:"·";display:inline-block;width:12px;color:#c9cdd6}
 .step .note{font-size:16px;color:#7a8296;margin-top:6px}
-.ex{position:absolute;left:670px;top:0;width:180px;opacity:0;transform:translateY(10px);transition:opacity .4s ease,transform .4s ease}
+.ex{position:absolute;left:952px;top:0;width:96px;opacity:0;transform:translateY(10px);transition:opacity .4s ease,transform .4s ease}
 .ex.show{opacity:1;transform:translateY(0)}
-.mock{border:1.5px solid #e7e9e4;border-radius:14px;background:#fff;padding:14px;box-shadow:0 12px 28px rgba(20,25,45,.10)}
-.mock .mh{font-size:13px;font-weight:800;letter-spacing:.12em;color:#7a8296;margin-bottom:10px}
+.mock{border:1.5px solid #e7e9e4;border-radius:12px;background:#fff;padding:8px;box-shadow:0 12px 28px rgba(20,25,45,.10)}
+.mock .mh{font-size:10px;font-weight:800;letter-spacing:.12em;color:#7a8296;margin-bottom:10px}
 .mock > i{display:block;border-radius:4px;margin-top:7px}
-.mock .mbk{font-size:14px;font-weight:700;color:#2F7BF6;margin-top:10px}
-.mock .mcard{height:26px;border:1.5px solid #2F7BF6;border-radius:8px;margin-top:8px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#2F7BF6;font-weight:700}
+.mock .mbk{font-size:11px;font-weight:700;color:#2F7BF6;margin-top:10px}
+.mock .mcard{height:20px;font-size:10px;border:1.5px solid #2F7BF6;border-radius:8px;margin-top:8px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#2F7BF6;font-weight:700}
 .mock .mgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
-.mock .mgrid i{height:22px;border-radius:5px;background:#e7e9e4}
+.mock .mgrid i{height:16px;border-radius:5px;background:#e7e9e4}
 .foot{position:absolute;left:64px;bottom:28px;right:66px;border-top:1px solid #e6e6e2;padding-top:14px;display:flex;justify-content:space-between;font-size:18px;color:#7a8296}
 .foot b{color:#2F7BF6}
 </style></head><body>
