@@ -204,82 +204,47 @@ requestAnimationFrame(tick);
 <div class="doodle d2" style="left:-110px;bottom:-90px"></div>
 </div>`;
 } else if (S.mode === "trailer") {
-  // Trailer v3 - brand palette, realistic light iPhones, designed mini-site.
+  // Trailer v6 - "YOU ARE IN CONTROL": clean phones, Ken-Burns motion on
+  // the clip posters (headless can't play <video> frames), minimal copy.
   const D = S.duration || 6.0;
-  const L = S.left || {}, Rc = S.right || {}, M = S.mid || {};
-  const BLUE = "#0667d2", PURPLE = "#6a3fd1", TEAL = "#0f8fa8", INK = "#1c1e26";
-  const SOFT = "#f2f5f9", LINE = "#dfe5ee";
+  const L = S.left || {}, Rc = S.right || {};
+  const INK = "#10121a", BLUE = "#0667d2", PURPLE = "#6a3fd1";
+  const dataOf = (f) => { try { return "data:image/png;base64," + readFileSync(f).toString("base64"); } catch (e) { return ""; } };
+  const posters = { left: dataOf(S.posters?.left || ""), mid: dataOf(S.posters?.mid || ""), right: dataOf(S.posters?.right || "") };
+  const pos = { left: "object-position:50% 50%", mid: "object-position:50% 18%", right: "object-position:50% 26%" };
   css = `
-.trailer{position:absolute;inset:0;overflow:hidden;background:#fbfcfe;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
+.trailer{position:absolute;inset:0;overflow:hidden;background:#ffffff;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
 .blob{position:absolute;border-radius:50%;filter:blur(14px)}
-.b1{width:330px;height:330px;left:-140px;top:-120px;background:#e3edfb}
-.b2{width:360px;height:360px;right:-150px;top:-110px;background:#efe8fb}
-.b3{width:280px;height:280px;left:-70px;bottom:-130px;background:#e4f4f7}
-.b4{width:300px;height:300px;right:-80px;bottom:-140px;background:#fdeee7}
-.kicker{position:absolute;top:32px;left:0;right:0;text-align:center;font-size:18px;font-weight:800;letter-spacing:.26em;text-transform:uppercase;color:#3b4252}
-.vid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#0b0d15}
-.tag{position:absolute;top:9px;left:9px;font-size:9px;font-weight:900;letter-spacing:.16em;color:#fff;background:rgba(8,10,18,.62);padding:3px 8px;border-radius:6px;z-index:2}
-.phone{position:absolute;border-radius:44px;background:#1c1d24;padding:9px;box-shadow:0 20px 46px rgba(30,45,90,.22);z-index:2}
-.screen{position:relative;border-radius:34px;overflow:hidden;background:#fff;width:100%;height:100%}
+.b1{width:340px;height:340px;left:-150px;top:-120px;background:#e3edfb}
+.b2{width:360px;height:360px;right:-160px;top:-110px;background:#efe8fb}
+.b3{width:300px;height:300px;left:-80px;bottom:-140px;background:#e4f4f7}
+.b4{width:320px;height:320px;right:-90px;bottom:-150px;background:#fdeee7}
+.head{position:absolute;top:36px;left:0;right:0;text-align:center;font-size:52px;font-weight:900;letter-spacing:.16em;text-transform:uppercase;color:${INK}}
+.head em{font-style:normal;color:${BLUE}}
+.phone{position:absolute;border-radius:44px;background:#1c1d24;padding:9px;box-shadow:0 22px 48px rgba(30,45,90,.24);z-index:2}
+.screen{position:relative;border-radius:34px;overflow:hidden;background:#000;width:100%;height:100%}
 .island{position:absolute;top:9px;left:50%;transform:translateX(-50%);width:38%;height:13px;border-radius:7px;background:#05060a;z-index:3}
-.home{position:absolute;bottom:7px;left:50%;transform:translateX(-50%);width:34px;height:4px;border-radius:2px;background:#d6dae2;z-index:3}
-.pleft{width:132px;height:272px;left:70px;top:140px}
-.plb{position:absolute;left:16px;right:16px;bottom:18px;display:flex;gap:5px;justify-content:center;align-items:center}
-.plb i{width:7px;height:7px;border-radius:50%;background:${BLUE};opacity:.25;animation:bd 1.5s ease-in-out infinite}
-.plb i:nth-child(2){animation-delay:.22s}.plb i:nth-child(3){animation-delay:.44s}
-@keyframes bd{0%,100%{opacity:.25;transform:translateY(0)}45%{opacity:1;transform:translateY(-3px)}}
-.phead{display:flex;flex-direction:column;align-items:center;padding:40px 10px 0}
-.phead .tt{font-size:15px;font-weight:900;letter-spacing:.2em;color:${BLUE}}
-.phead .role{font-size:9px;color:#7a8296;letter-spacing:.08em;margin-top:2px}
-.plist{display:flex;flex-direction:column;gap:8px;padding:14px 12px 0}
-.plist div{height:34px;border:1.5px solid ${LINE};background:#fff;border-radius:12px}
-.plist div span{display:block;height:8px;width:60%;border-radius:4px;background:${SOFT};margin:12px 10px}
-.plist div:nth-child(1) span{background:${BLUE};opacity:.55}
-.plist div:nth-child(2) span{background:${BLUE};opacity:.3}
-.plist div:nth-child(3) span{background:${BLUE};opacity:.18}
-.pright{width:132px;height:272px;left:598px;top:140px}
-.prb{position:absolute;left:0;right:0;bottom:18px;text-align:center}
-.prb i{display:inline-block;width:6px;height:13px;background:${PURPLE};animation:cu 1s steps(1) infinite}
-@keyframes cu{0%,49%{opacity:1}50%,100%{opacity:0}}
-.pmid{width:168px;height:352px;left:316px;top:72px;z-index:3}
-.bar{display:flex;align-items:center;gap:5px;height:30px;padding:0 10px;background:#fafbfd;border-bottom:1px solid ${LINE}}
-.bar i{width:7px;height:7px;border-radius:50%}
-.bar .url{flex:1;height:15px;border-radius:8px;background:#f0f3f7;font-size:7px;line-height:15px;color:#6b7280;padding:0 8px}
-.page{position:absolute;left:0;right:0;top:30px;bottom:26px;background:#fff;will-change:transform}
-.hero{height:104px;background:linear-gradient(135deg,${BLUE},${TEAL});position:relative}
-.hero div{position:absolute;left:12px;bottom:12px;color:#fff}
-.hero div i{display:block;font-style:normal;font-size:13px;font-weight:900}
-.hero div em{font-style:normal;font-size:8px;opacity:.85}
-.shot{height:64px;margin:8px;border-radius:10px;overflow:hidden;box-shadow:0 2px 8px rgba(30,50,100,.12)}
-.shot img{width:100%;height:100%;object-fit:cover;object-position:50% 10%;transform:scale(1.25);transform-origin:50% 4%}
-.cardz{display:flex;gap:8px;padding:0 8px 8px}
-.cardz div{flex:1;border:1px solid ${LINE};border-radius:10px;padding:8px}
-.cardz div i{display:block;font-style:normal;font-size:7px;color:#5b6474;height:8px;width:80%;background:${SOFT};border-radius:4px}
-.cardz div i + i{margin-top:5px;width:55%}
-.cardz div:nth-child(1){border-top:3px solid ${BLUE}}
-.cardz div:nth-child(2){border-top:3px solid ${PURPLE}}
-.rib{position:absolute;left:8px;right:8px;bottom:6px;height:20px;border-radius:10px;background:rgba(255,255,255,.92);box-shadow:0 2px 8px rgba(40,55,95,.12);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;color:#11131a;z-index:2}
-.rib b{color:${TEAL}}
+.home{position:absolute;bottom:7px;left:50%;transform:translateX(-50%);width:34px;height:4px;border-radius:2px;background:rgba(255,255,255,.5);z-index:3}
+.kb{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;will-change:transform}
+.pleft{width:132px;height:272px;left:70px;top:150px}
+.pmid{width:150px;height:308px;left:325px;top:132px}
+.pright{width:132px;height:272px;left:598px;top:150px}
 `;
-  const LB = L.title || "AGENT", LR = L.role || "the back end";
-  let siteSrc = S.siteImg || "";
-  try { const _b = readFileSync(S.siteImg); siteSrc = "data:image/png;base64," + _b.toString("base64"); } catch (e) {}
-  const vids = {};
-  for (const _k of ["left", "right", "mid"]) { const _f = S.videos && S.videos[_k]; if (_f) { try { const _v = readFileSync(_f); vids[_k] = (_f.endsWith(".webm") ? "data:video/webm;base64," : "data:video/mp4;base64,") + _v.toString("base64"); } catch (e) {} } }
-
-  const RB = Rc.title || "HUMAN", RR = Rc.role || "the front end";
   counterJs = `<script>
 const t0 = performance.now();
 const D = ${D};
-const B = ${JSON.stringify(S.beats || [1.5, 3.0, 4.5, 5.5])};
-const R = ${JSON.stringify((M.ribbons || ["you, together", "agent + human", "front + back"]).slice(0, 3))};
-const rib = document.getElementById("rib"), pg = document.getElementById("pg");
-const inr = (a, b, t) => t >= a && t < b;
+const kbs = ["kbL", "kbM", "kbR"];
+const offs = [0, 2.1, 4.2];
 function tick(){
   const t = ((performance.now() - t0) / 1000) % D;
-  let idx = 0; for (let i = 0; i < B.length; i++) if (t >= B[i]) idx = (i + 1) % R.length;
-  if (rib) rib.innerHTML = R[idx].split("+").map((x, i) => i ? "<b>+</b>" + x : x).join("");
-  if (pg) { const s = t > 2.2 && t < 5.2 ? -14 : 0; pg.style.transform = "translateY(" + s + "px)"; }
+  kbs.forEach((id, i) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const ph = (offs[i] + t) / D;
+    const x = (Math.sin(ph * 2 * Math.PI) - 0.5) * 16;
+    const sc = 1.14 + 0.04 * Math.sin(ph * 2 * Math.PI);
+    el.style.transform = "scale(" + sc.toFixed(3) + ") translateX(" + x.toFixed(1) + "px)";
+  });
   requestAnimationFrame(tick);
 }
 requestAnimationFrame(tick);
@@ -287,30 +252,21 @@ requestAnimationFrame(tick);
   sceneHtml = `
 <div class="trailer">
   <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><div class="blob b4"></div>
-  <div class="kicker">${S.kicker || "AGENT × HUMAN → ONE SITE"}</div>
+  <div class="head">YOU <em>ARE</em> IN CONTROL</div>
   <div class="phone pleft"><div class="screen"><div class="island"></div>
-    ${S.videos ? `<video class="vid" src="${vids.left || ""}" muted loop autoplay playsinline></video><div class="tag">${LB}</div>` : `<div class="phead"><div class="tt">${LB}</div><div class="role">${LR}</div></div><div class="plist"><div><span></span></div><div><span></span></div><div><span></span></div></div>`}
-    <div class="plb"><i></i><i></i><i></i></div>
+    ${posters.left ? `<img class="kb" id="kbL" src="${posters.left}" style="${pos.left}">` : ""}
     <div class="home"></div>
   </div></div>
-  <div class="phone pmid"><div class="screen"><div class="island"></div><div class="bar">
-    <i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i>
-    <div class="url">${S.siteUrl || "zainkhan.me"}</div></div>
-    ${S.videos ? `<video class="vid" src="${vids.mid || ""}" muted loop autoplay playsinline></video>` : `<div class="page" id="pg">
-      <div class="hero"><div><i>zain khan</i><em>AI · agents · the open person company</em></div></div>
-      <div class="shot"><img src="${siteSrc}" alt=""></div>
-      <div class="cardz"><div><i></i><i></i></div><div><i></i><i></i></div></div>
-    </div>`}
-    <div class="rib" id="rib">you, together</div>
+  <div class="phone pmid"><div class="screen"><div class="island"></div>
+    ${posters.mid ? `<img class="kb" id="kbM" src="${posters.mid}" style="${pos.mid}">` : ""}
     <div class="home"></div>
   </div></div>
   <div class="phone pright"><div class="screen"><div class="island"></div>
-    ${S.videos ? `<video class="vid" src="${vids.right || ""}" muted loop autoplay playsinline></video><div class="tag">${RB}</div>` : `<div class="phead"><div class="tt">${RB}</div><div class="role">${RR}</div></div><div class="plist"><div><span></span></div><div><span></span></div><div><span></span></div></div>`}
-    <div class="prb"><i></i></div>
+    ${posters.right ? `<img class="kb" id="kbR" src="${posters.right}" style="${pos.right}">` : ""}
     <div class="home"></div>
   </div></div>
 </div>`;
-} else if (S.mode === "canvas") {} else if (S.mode === "canvas") {} else if (S.mode === "canvas") {
+} else if (S.mode === "canvas") {} else if (S.mode === "canvas") {} else if (S.mode === "canvas") {} else if (S.mode === "canvas") {
   // ── canvas mode: rich single frame, many elements animating at once ─────
   // (reference style: soft pastel gradient stays static; chips, pills, hero
   // counter, equalizer bars and ambient dots all move in place continuously)

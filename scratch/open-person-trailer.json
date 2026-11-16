@@ -6,7 +6,7 @@
   ],
   "fps": 10,
   "duration": 6.0,
-  "kicker": "A KID. A DREAM. NOW: ONE AGENT + YOU",
+  "kicker": "YOU ARE IN CONTROL",
   "siteImg": "assets/site-zainkhan.png",
   "siteUrl": "zainkhan.me",
   "left": {
@@ -28,11 +28,7 @@
     ]
   },
   "mid": {
-    "ribbons": [
-      "a kid who just wanted to build",
-      "now you + your agents, together",
-      "in this world, you can build almost anything"
-    ]
+    "ribbons": []
   },
   "beats": [
     1.4,
@@ -41,8 +37,13 @@
     5.4
   ],
   "videos": {
-    "left": "assets/videos/ok/mixkit-agent.webm",
-    "mid": "assets/videos/ok/coverr-journey.webm",
-    "right": "assets/videos/ok/coverr-confident.webm"
+    "left": "assets/videos/ok/mixkit-code9757.mp4",
+    "mid": "assets/videos/ok/coverr-journey.mp4",
+    "right": "assets/videos/ok/coverr-confident.mp4"
+  },
+  "posters": {
+    "left": "assets/videos/ok/mixkit-code9757-p.png",
+    "mid": "assets/videos/ok/coverr-journey-p.png",
+    "right": "assets/videos/ok/coverr-confident-p.png"
   }
 }
