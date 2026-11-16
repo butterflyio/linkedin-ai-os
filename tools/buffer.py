@@ -138,6 +138,14 @@ def cmd_profiles(args) -> int:
     return 0
 
 
+def cmd_delete(args) -> int:
+    token = load_token(args)
+    query = 'mutation { deletePost(input: {id: %s}) { ... on DeletePostSuccess { id } ... on VoidMutationError { message } } }' % json.dumps(args.post_id)
+    data = gql(token, query)
+    print(json.dumps(data.get("deletePost") or {}, indent=2))
+    return 0
+
+
 def cmd_submit(args) -> int:
     token = load_token(args)
     text = Path(args.draft).read_text(encoding="utf-8").strip()
@@ -179,12 +187,21 @@ def cmd_submit(args) -> int:
             raise BufferError("--when must be at least 5 minutes in the future.")
         due_at = dt.isoformat(timespec="seconds")
 
-    assets = "[]"
+    asset_parts = []
     if args.link:
-        assets = json.dumps([{"document": {"url": args.link}}])
+        asset_parts.append('{document: {url: %s, title: "Link", thumbnailUrl: %s}}' % (json.dumps(args.link), json.dumps(args.link)))
+    for u in (getattr(args, "image", None) or []):
+        asset_parts.append('{image: {url: %s}}' % json.dumps(u))
+    for u in (getattr(args, "video", None) or []):
+        asset_parts.append('{video: {url: %s}}' % json.dumps(u))
+    for u in (getattr(args, "document", None) or []):
+        thumb = getattr(args, "document_thumbnail", None) or u
+        asset_parts.append('{document: {url: %s, title: %s, thumbnailUrl: %s}}' % (
+            json.dumps(u), json.dumps(getattr(args, "document_title", None) or "BuzzzAgentic"), json.dumps(thumb)))
+    assets = "[" + ", ".join(asset_parts) + "]"
 
     input_fields = {
-        "channelId": args.profile,
+        "channelId": json.dumps(args.profile),
         "text": json.dumps(text),
         "assets": assets,
         "tagIds": "[]",
@@ -236,6 +253,10 @@ def main(argv) -> int:
     p_profiles.add_argument("--dry-run", action="store_true")
     p_profiles.set_defaults(func=cmd_profiles)
 
+    p_delete = sub.add_parser("delete", help="delete a scheduled Buffer post by id")
+    p_delete.add_argument("post_id")
+    p_delete.set_defaults(func=cmd_delete)
+
     p_submit = sub.add_parser("submit", help="push a draft into Buffer")
     p_submit.add_argument("draft", help="path to the approved draft file")
     p_submit.add_argument("--profile", help="Buffer channel id (default: LinkedIn channel)")
@@ -245,6 +266,11 @@ def main(argv) -> int:
     p_submit.add_argument("--draft", dest="draft_flag", action="store_true", help="save as draft (default behavior)")
     p_submit.add_argument("--gate", action="store_true", help="run caption_gate.py first")
     p_submit.add_argument("--link", help="attach a link (document asset)")
+    p_submit.add_argument("--image", action="append", help="public image URL (repeatable for carousels)")
+    p_submit.add_argument("--video", action="append", help="public video URL")
+    p_submit.add_argument("--document", action="append", help="public PDF/document URL")
+    p_submit.add_argument("--document-title", default="BuzzzAgentic", help="title for a document/PDF post")
+    p_submit.add_argument("--document-thumbnail", help="public image URL used as the document thumbnail")
     p_submit.add_argument("--dry-run", action="store_true")
     p_submit.set_defaults(func=cmd_submit)
 

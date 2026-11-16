@@ -203,6 +203,94 @@ requestAnimationFrame(tick);
 <div class="footbar"><div class="fl">${S.footerLeft ?? ""}</div><div class="fr">${S.footerRight ?? ""}</div></div>
 <div class="doodle d2" style="left:-110px;bottom:-90px"></div>
 </div>`;
+} else if (S.mode === "trailer") {
+  // ── trailer mode: 3-phone cinematic teaser (16:9), seamless loop ───────
+  // replicates the '3 floating iPhones + flickering brand card' LinkedIn GIF
+  // structure; center phone hard-cuts between two slides, card colour-flips
+  // between soft/hot variants, wrap returns to the frame-0 state.
+  const [W, H] = S.size;
+  const D = S.duration || 5.3;
+  const tw = (b) => ((b / D) * 100).toFixed(2);
+  const be = S.beats || [1.2, 2.3, 3.5, 4.6];
+  const [b0, b1, b2, b3] = [tw(be[0]), tw(be[1]), tw(be[2]), tw(be[3])];
+  // Slash-stepped keyframes: hard cuts on the beat grid; timeline wraps so the
+  // final state equals the frame-0 state (seamless loop).
+  const slideA = `@keyframes sA { 0%{opacity:1} ${b0}%{opacity:1} ${tw(be[0] + 0.02)}%{opacity:0} ${b1}%{opacity:0} ${tw(be[1] + 0.02)}%{opacity:1} ${b2}%{opacity:1} ${tw(be[2] + 0.02)}%{opacity:0} ${b3}%{opacity:0} ${tw(be[3] + 0.02)}%{opacity:1} 100%{opacity:1} }`;
+  const slideB = `@keyframes sB { 0%{opacity:0} ${b0}%{opacity:0} ${tw(be[0] + 0.02)}%{opacity:1} ${b1}%{opacity:1} ${tw(be[1] + 0.02)}%{opacity:0} ${b2}%{opacity:0} ${tw(be[2] + 0.02)}%{opacity:1} ${b3}%{opacity:1} ${tw(be[3] + 0.02)}%{opacity:0} 100%{opacity:0} }`;
+  const card = `@keyframes cd { 0%{background:${S.accentSoft};transform:translateY(0)} ${b0}%{background:${S.accentSoft};transform:translateY(0)} ${tw(be[0] + 0.02)}%{background:${S.accentHot};transform:translateY(-34px)} ${b1}%{background:${S.accentHot};transform:translateY(-34px)} ${tw(be[1] + 0.02)}%{background:${S.accentSoft};transform:translateY(0)} ${b2}%{background:${S.accentSoft};transform:translateY(0)} ${tw(be[2] + 0.02)}%{background:${S.accentHot};transform:translateY(-34px)} ${b3}%{background:${S.accentHot};transform:translateY(-34px)} ${tw(be[3] + 0.02)}%{background:${S.accentSoft};transform:translateY(0)} 100%{background:${S.accentSoft};transform:translateY(0)} }`;
+
+  css = `
+.trailer{position:absolute;inset:0;overflow:hidden;background:${S.backdrop};font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
+.light1{position:absolute;left:-120px;top:-140px;width:300px;height:620px;background:linear-gradient(180deg,rgba(255,255,255,.30),rgba(255,255,255,0));transform:rotate(24deg)}
+.light2{position:absolute;right:-80px;top:-120px;width:280px;height:560px;background:linear-gradient(180deg,rgba(255,255,255,.22),rgba(255,255,255,0));transform:rotate(-22deg)}
+.blob{position:absolute;border-radius:50%;background:rgba(255,255,255,.25)}
+.phone{position:absolute;background:#101114;border-radius:30px;padding:7px;box-shadow:0 18px 44px rgba(10,10,20,.45);z-index:2}
+.phone .island{width:38%;height:7px;border-radius:4px;background:#000;margin:4px auto 0}
+.screen{position:relative;border-radius:24px;overflow:hidden;background:#15151a;width:100%;height:100%}
+.phone .pcap{position:relative}
+.left{width:118px;height:244px;left:66px;top:180px}
+.center{width:156px;height:322px;left:316px;top:92px}
+.right{width:118px;height:244px;left:568px;top:186px;z-index:1}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.sA{background:radial-gradient(circle at 30% 20%,#41536e,#1c2537)}
+.sB{background:radial-gradient(circle at 72% 24%,#6b2c4e,#2b1124)}
+.slide .big{font-size:34px;font-weight:900;font-style:italic;text-transform:uppercase;color:#fff;letter-spacing:.02em}
+.slide .sub{font-size:12px;font-weight:600;color:rgba(255,255,255,.78);margin-top:6px}
+.mini{position:absolute;left:8px;right:8px;height:58px;border-radius:10px;background:#20222a;display:flex;align-items:center;justify-content:center;color:#fff}
+.mini b{font-size:18px;margin-right:6px;color:${S.accentSoft}}
+.m1{top:56px} .m2{top:122px}
+.tcard{position:absolute;left:6px;right:6px;bottom:6px;border-radius:12px;background:${S.accentSoft};color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 4px;box-shadow:0 8px 22px rgba(0,0,0,.35)}
+.tcard .tt{font-size:15px;font-weight:900;font-style:italic;text-transform:uppercase;letter-spacing:.02em}
+.tcard .ep{font-size:8px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;opacity:.85}
+.tcardwrap{position:absolute;left:0;right:0;top:0;bottom:0}
+.miniR{position:absolute;left:9px;right:9px;height:58px;border-radius:10px;background:#20222a;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+.r1{top:56px} .r2{top:122px} .r3{top:188px}
+.vig{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 42%,rgba(0,0,0,0),rgba(0,0,0,.28))}
+`;
+
+  const slides = S.centerSlides || [];
+  sceneHtml = `
+<div class="trailer">
+  <div class="light1"></div><div class="light2"></div>
+  <div class="blob" style="width:190px;height:190px;left:150px;bottom:-70px"></div>
+  <div class="blob" style="width:130px;height:130px;right:180px;bottom:60px;background:rgba(255,255,255,.16)"></div>
+  <div class="phone left"><div class="island"></div><div class="screen">
+    <div class="mini m1"><b>✦</b>idea</div>
+    <div class="mini m2"><b>✓</b>gate</div>
+    <div class="tcardwrap"><div class="tcard" id="tcard"><div class="tt">THE OPEN PERSON</div><div class="tt">COMPANY.</div><div class="ep">POST 01 · HOOK → GATE → PUBLISH</div></div></div>
+  </div></div>
+  <div class="phone center"><div class="island"></div><div class="screen">
+    <div class="slide sA" id="slA"><div class="big">${slides[0]?.label || "HUMAN"}</div><div class="sub">${slides[0]?.sub || ""}</div></div>
+    <div class="slide sB" id="slB"><div class="big">${slides[1]?.label || "AGENT"}</div><div class="sub">${slides[1]?.sub || ""}</div></div>
+  </div></div>
+  <div class="phone right"><div class="island"></div><div class="screen">
+    <div class="miniR r1">hook</div>
+    <div class="miniR r2">post</div>
+    <div class="miniR r3">buffer</div>
+  </div></div>
+  <div class="vig"></div>
+</div>`;
+  counterJs = "";
+
+counterJs = `<script>
+const t0 = performance.now();
+const B = ${JSON.stringify(S.beats || [1.2, 2.3, 3.5, 4.6])};
+const D = ${D};
+const A = document.getElementById("slA"), C = document.getElementById("slB"), Q = document.getElementById("tcard");
+const SOFT = "${S.accentSoft}", HOT = "${S.accentHot}";
+function inr(a,b,t){ return t >= a && t < b; }
+function tick(){
+  const t = ((performance.now() - t0) / 1000) % D;
+  const aOn = inr(0,B[0],t) || inr(B[1],B[2],t) || inr(B[3],D,t);
+  const hot = inr(B[0],B[1],t) || inr(B[2],B[3],t);
+  A.style.opacity  = aOn ? 1 : 0;
+  C.style.opacity  = aOn ? 0 : 1;
+  Q.style.background = hot ? HOT : SOFT;
+  Q.style.transform  = hot ? "translateY(-34px)" : "translateY(0)";
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+</script>`;
 } else if (S.mode === "canvas") {
   // ── canvas mode: rich single frame, many elements animating at once ─────
   // (reference style: soft pastel gradient stays static; chips, pills, hero
@@ -487,14 +575,14 @@ ${css}
 <body><div id="stage">
 ${sceneHtml}
 ${S.mode === "story" ? `<div class="return"></div>` : ""}
-</div>${S.mode === "board" || S.mode === "canvas" ? counterJs : ""}</body></html>`;
+</div>${S.mode === "board" || S.mode === "canvas" || S.mode === "trailer" ? counterJs : ""}</body></html>`;
 
 // ── render ─────────────────────────────────────────────────────────────────
 const browser = await puppeteer.launch({ executablePath: chrome, args: ["--no-sandbox", "--disable-gpu"] });
 const page = await browser.newPage();
 await page.setViewport({ width: W, height: H, deviceScaleFactor: 1 });
 await page.setContent(html, { waitUntil: "networkidle2", timeout: 60000 });
-await page.waitForSelector(S.mode === "board" ? "#stage .board" : S.mode === "canvas" ? "#stage .canvas" : S.mode === "flow" ? "#stage .flow" : "#stage .scene", { timeout: 30000 });
+await page.waitForSelector(S.mode === "board" ? "#stage .board" : S.mode === "canvas" ? "#stage .canvas" : S.mode === "flow" ? "#stage .flow" : S.mode === "trailer" ? "#stage .trailer" : "#stage .scene", { timeout: 30000 });
 await new Promise((r) => setTimeout(r, 400));
 
 if (args.includes("--dump-html")) { await browser.close(); process.stdout.write(html); process.exit(0); }
@@ -549,11 +637,13 @@ await page.evaluate(() => new Promise(requestAnimationFrame));
 const t0 = await page.evaluate(() => performance.now());
 const tagged = [];
 for (let b = 0; b < 900; b++) {
-  const shot = await page.$("#stage");
+  const shot = S.mode === "trailer" ? null : await page.$("#stage");
   const path = `frames-tagged/s_${String(b).padStart(4, "0")}.png`;
   await page.evaluate(() => new Promise(requestAnimationFrame));
+  await new Promise((r) => setTimeout(r, 18)); // let JS-driven paints settle before capture
   const t = await page.evaluate(() => performance.now());
-  await shot.screenshot({ path });
+  if (shot) await shot.screenshot({ path });
+  else await page.screenshot({ path });
   tagged.push({ t, path });
   if (t - t0 > (DURATION + 1) * 1000) break;
   await new Promise((r) => setTimeout(r, 25));
@@ -572,6 +662,7 @@ console.log(`subsampled: ${used}/${TOTAL}`);
 
 if (posterPath) {
   const wantPoster = (
+    S.mode === "trailer" ? ((S.beats?.[2] ?? 3.5) + 0.45) :
     S.mode === "board" || S.mode === "canvas" || S.mode === "flow" ? (S.footerTimes?.[1] ?? 8.8) + 0.9 : S.scenes.at(-1).start + 0.8
   ) * 1000;
   let best = tagged[0];
