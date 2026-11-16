@@ -1,0 +1,37 @@
+{
+  "slides": [
+    {
+      "kicker": "This time last year",
+      "headline": "A kid who wanted to build things",
+      "sub": "(websites, marketing, big ideas. too many strings to pull.)",
+      "align": "right",
+      "mood": ["#14161d", "#2a2436"],
+      "img": ""
+    },
+    {
+      "kicker": "For years I hit the same wall",
+      "headline": "No team. No time. No clue.",
+      "sub": "olive oil taught me margins. coaching taught me my time was the limit.",
+      "align": "center",
+      "mood": ["#171513", "#2a2317"],
+      "img": ""
+    },
+    {
+      "kicker": "Then AI showed up",
+      "headline": "One agent builds. You orchestrate.",
+      "sub": "a small swarm does the making. you do the deciding.",
+      "align": "center",
+      "mood": ["#101826", "#1f2438"],
+      "img": ""
+    },
+    {
+      "kicker": "So now",
+      "headline": "You are in control",
+      "underline": true,
+      "sub": "the kid who couldn't build now runs the whole show.",
+      "align": "center",
+      "mood": ["#0e1410", "#1c2a20"],
+      "img": ""
+    }
+  ]
+}
