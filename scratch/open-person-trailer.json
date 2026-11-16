@@ -39,5 +39,10 @@
     2.8,
     4.2,
     5.4
-  ]
+  ],
+  "videos": {
+    "left": "assets/videos/ok/mixkit-agent.webm",
+    "mid": "assets/videos/ok/coverr-journey.webm",
+    "right": "assets/videos/ok/coverr-confident.webm"
+  }
 }

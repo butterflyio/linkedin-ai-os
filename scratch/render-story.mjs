@@ -217,6 +217,8 @@ requestAnimationFrame(tick);
 .b3{width:280px;height:280px;left:-70px;bottom:-130px;background:#e4f4f7}
 .b4{width:300px;height:300px;right:-80px;bottom:-140px;background:#fdeee7}
 .kicker{position:absolute;top:32px;left:0;right:0;text-align:center;font-size:18px;font-weight:800;letter-spacing:.26em;text-transform:uppercase;color:#3b4252}
+.vid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#0b0d15}
+.tag{position:absolute;top:9px;left:9px;font-size:9px;font-weight:900;letter-spacing:.16em;color:#fff;background:rgba(8,10,18,.62);padding:3px 8px;border-radius:6px;z-index:2}
 .phone{position:absolute;border-radius:44px;background:#1c1d24;padding:9px;box-shadow:0 20px 46px rgba(30,45,90,.22);z-index:2}
 .screen{position:relative;border-radius:34px;overflow:hidden;background:#fff;width:100%;height:100%}
 .island{position:absolute;top:9px;left:50%;transform:translateX(-50%);width:38%;height:13px;border-radius:7px;background:#05060a;z-index:3}
@@ -262,6 +264,8 @@ requestAnimationFrame(tick);
   const LB = L.title || "AGENT", LR = L.role || "the back end";
   let siteSrc = S.siteImg || "";
   try { const _b = readFileSync(S.siteImg); siteSrc = "data:image/png;base64," + _b.toString("base64"); } catch (e) {}
+  const vids = {};
+  for (const _k of ["left", "right", "mid"]) { const _f = S.videos && S.videos[_k]; if (_f) { try { const _v = readFileSync(_f); vids[_k] = (_f.endsWith(".webm") ? "data:video/webm;base64," : "data:video/mp4;base64,") + _v.toString("base64"); } catch (e) {} } }
 
   const RB = Rc.title || "HUMAN", RR = Rc.role || "the front end";
   counterJs = `<script>
@@ -285,25 +289,23 @@ requestAnimationFrame(tick);
   <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><div class="blob b4"></div>
   <div class="kicker">${S.kicker || "AGENT × HUMAN → ONE SITE"}</div>
   <div class="phone pleft"><div class="screen"><div class="island"></div>
-    <div class="phead"><div class="tt">${LB}</div><div class="role">${LR}</div></div>
-    <div class="plist"><div><span></span></div><div><span></span></div><div><span></span></div></div>
+    ${S.videos ? `<video class="vid" src="${vids.left || ""}" muted loop autoplay playsinline></video><div class="tag">${LB}</div>` : `<div class="phead"><div class="tt">${LB}</div><div class="role">${LR}</div></div><div class="plist"><div><span></span></div><div><span></span></div><div><span></span></div></div>`}
     <div class="plb"><i></i><i></i><i></i></div>
     <div class="home"></div>
   </div></div>
   <div class="phone pmid"><div class="screen"><div class="island"></div><div class="bar">
     <i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i>
     <div class="url">${S.siteUrl || "zainkhan.me"}</div></div>
-    <div class="page" id="pg">
+    ${S.videos ? `<video class="vid" src="${vids.mid || ""}" muted loop autoplay playsinline></video>` : `<div class="page" id="pg">
       <div class="hero"><div><i>zain khan</i><em>AI · agents · the open person company</em></div></div>
       <div class="shot"><img src="${siteSrc}" alt=""></div>
       <div class="cardz"><div><i></i><i></i></div><div><i></i><i></i></div></div>
-    </div>
+    </div>`}
     <div class="rib" id="rib">you, together</div>
     <div class="home"></div>
   </div></div>
   <div class="phone pright"><div class="screen"><div class="island"></div>
-    <div class="phead"><div class="tt">${RB}</div><div class="role">${RR}</div></div>
-    <div class="plist"><div><span></span></div><div><span></span></div><div><span></span></div></div>
+    ${S.videos ? `<video class="vid" src="${vids.right || ""}" muted loop autoplay playsinline></video><div class="tag">${RB}</div>` : `<div class="phead"><div class="tt">${RB}</div><div class="role">${RR}</div></div><div class="plist"><div><span></span></div><div><span></span></div><div><span></span></div></div>`}
     <div class="prb"><i></i></div>
     <div class="home"></div>
   </div></div>
@@ -600,6 +602,20 @@ const page = await browser.newPage();
 await page.setViewport({ width: W, height: H, deviceScaleFactor: 1 });
 await page.setContent(html, { waitUntil: "networkidle2", timeout: 60000 });
 await page.waitForSelector(S.mode === "board" ? "#stage .board" : S.mode === "canvas" ? "#stage .canvas" : S.mode === "flow" ? "#stage .flow" : S.mode === "trailer" ? "#stage .trailer" : "#stage .scene", { timeout: 30000 });
+
+if (S.mode === "trailer") {
+  await page.evaluate(() => new Promise((res) => {
+    const vs = [...document.querySelectorAll("video")];
+    if (!vs.length) return res();
+    let done = 0;
+    const cb = () => { if (++done >= vs.length) res(); };
+    vs.forEach((v) => {
+      v.muted = true; v.defaultMuted = true; v.playsInline = true; v.pause();
+      v.addEventListener("loadeddata", cb, { once: true });
+      setTimeout(cb, 10000);
+    });
+  }));
+}
 await new Promise((r) => setTimeout(r, 400));
 
 if (args.includes("--dump-html")) { await browser.close(); process.stdout.write(html); process.exit(0); }
@@ -656,9 +672,21 @@ const tagged = [];
 for (let b = 0; b < 900; b++) {
   const shot = S.mode === "trailer" ? null : await page.$("#stage");
   const path = `frames-tagged/s_${String(b).padStart(4, "0")}.png`;
+  const t = await page.evaluate(() => performance.now());
+  if (S.mode === "trailer") {
+    await page.evaluate((tt) => Promise.all([...document.querySelectorAll("video")].map((v) => new Promise((res) => {
+      const d = v.duration;
+      if (!(d && isFinite(d) && d > 0.2)) return res();
+      let done = false;
+      const go = () => res();
+      v.addEventListener("seeked", go, { once: true });
+      setTimeout(() => { if (!done) { done = true; res(); } }, 500);
+      v.currentTime = tt % d;
+    }))), (t - t0) / 1000);
+    await new Promise((r) => setTimeout(r, 12));
+  }
   await page.evaluate(() => new Promise(requestAnimationFrame));
   await new Promise((r) => setTimeout(r, 18)); // let JS-driven paints settle before capture
-  const t = await page.evaluate(() => performance.now());
   if (shot) await shot.screenshot({ path });
   else await page.screenshot({ path });
   tagged.push({ t, path });
