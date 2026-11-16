@@ -54,7 +54,8 @@
         "#161a2a",
         "#20263c"
       ],
-      "img": "carousel-imgs/IMG_0651.png"
+      "img": "carousel-imgs/IMG_0651.png",
+      "bw": true
     }
   ]
 }

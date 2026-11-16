@@ -26,7 +26,7 @@ function slideHtml(sl) {
   if (sl.img) {
     const p = sl.img.startsWith("/") ? sl.img : join("scratch", sl.img);
     try {
-      img = `<div class="bgimg" style="background-image:url(data:image/png;base64,${readFileSync(p).toString("base64")});background-size:cover;background-position:center"></div>`;
+      img = `<div class="bgimg" style="background-image:url(data:image/png;base64,${readFileSync(p).toString("base64")});background-size:cover;background-position:center;${sl.bw ? "filter:grayscale(1)" : ""}"></div>`;
     } catch (e) {}
   }
   const fit = (txt, cap) => Math.max(18, Math.min(cap || 72, Math.floor(880 / (Math.max(1, (txt || "").length) * 0.52))));
