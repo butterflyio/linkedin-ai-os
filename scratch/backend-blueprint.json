@@ -1,0 +1,39 @@
+{
+  "title": "AGENTIC AI BACKEND",
+  "titleAccent": "for your website",
+  "sub": "a living system, not a simple website - five pillars beneath the front end",
+  "pills": [
+    {
+      "n": "01",
+      "accent": "#2F7BF6",
+      "title": "Data Spine",
+      "points": ["every form of your data in one spine", "structured, unstructured, behavioural, site + personal", "2 cloud backups + 1 offline. your data stays yours."]
+    },
+    {
+      "n": "02",
+      "accent": "#2EA44F",
+      "title": "Content System",
+      "points": ["write, reuse and restructure blogs", "publish and schedule on the go", "solo founder or team. funnels change, content adapts."]
+    },
+    {
+      "n": "03",
+      "accent": "#F5A623",
+      "title": "Lead Builder",
+      "points": ["your own lead pages, built in", "launch offers and services fast, unique slugs", "no stack of paid page tools."]
+    },
+    {
+      "n": "04",
+      "accent": "#8B5CF6",
+      "title": "Tech Stack",
+      "points": ["built for agents, safe by design", "scalable for 8+ years", "near zero to start. ~$400-500 a month at heavy scale."]
+    },
+    {
+      "n": "05",
+      "accent": "#7EC8F5",
+      "title": "Analytics",
+      "points": ["see how your site and socials perform", "audience, engagement, heatmaps", "SEO, AEO + GEO built in. repurpose where it makes sense."]
+    }
+  ],
+  "closing": ["scalable databases", "connects to your marketing", "front-end design system: next"],
+  "footer": "backend of your agentic website - data spine to analytics"
+}
